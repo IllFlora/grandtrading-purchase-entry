@@ -113,7 +113,7 @@
       var m = window.GT_MOCK_MASTERS && window.GT_MOCK_MASTERS[S.site];
       if (!m) throw { code: 'bad_site', message: 'mock: site not found' };
       var log = LS.get('gtp_mock_log', []);
-      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], priced: r[3] !== '' && r[3] !== null }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), cancelHours: 24 };
+      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], priced: r[3] !== '' && r[3] !== null }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), pricePairs: m.pricePairs || [], cancelHours: 24 };
       if (action === 'add') {
         var results = body.entries.map(function (e) { if (log.some(function (l) { return l.id === e.id; })) return { id: e.id, ok: true, dup: true }; log.push({ id: e.id, createdAt: nowIso(), date: e.date, supCode: e.supCode, itemCode: e.itemCode, qty: e.qty, status: '有効', user: e.user, note: e.note, site: S.site }); return { id: e.id, ok: true }; });
         LS.set('gtp_mock_log', log); return { ok: true, results: results };
@@ -146,7 +146,7 @@
     if (cached && !force) useMasters(cached);
     if (!apiReady() && cached) return Promise.resolve(cached);
     return api('masters').then(function (j) {
-      var m = { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, cancelHours: j.cancelHours || 24 };
+      var m = { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, pricePairs: j.pricePairs || [], cancelHours: j.cancelHours || 24 };
       LS.set(mastersKey(), m); useMasters(m); return m;
     }).catch(function (err) {
       if (cached) return cached;
@@ -165,6 +165,13 @@
   }
   function displayName(o) { return S.lang === 'en' && o.en ? o.en : o.name; }
   function subName(o) { return S.lang === 'en' && o.en ? o.name : ''; }
+  // 単価の有無: 商品マスタに単価がある、または「選択中の取引先×この商品」に取引先別単価がある（金額自体はアプリに来ない）
+  function isPriced(item) {
+    if (!item) return false;
+    if (item.priced) return true;
+    var pairs = (S.masters && S.masters.pricePairs) || [];
+    return !!(S.sup && pairs.indexOf(S.sup.code + '|' + item.code) >= 0);
+  }
   function renderPicker(kind) {
     if (!S.masters) return;
     var list = kind === 'sup' ? S.masters.suppliers : S.masters.items;
@@ -184,7 +191,7 @@
       var b = document.createElement('button'); b.type = 'button'; b.className = 'row';
       var sub = subName(o);
       b.innerHTML = '<span class="code">' + esc(o.code) + '</span><span class="name">' + esc(displayName(o)) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
-        (kind === 'item' ? '<span class="tag">' + esc(unitLabel(o.unit)) + (o.priced ? '' : ' ・?') + '</span>' : '');
+        (kind === 'item' ? '<span class="tag">' + esc(unitLabel(o.unit)) + (isPriced(o) ? '' : ' ・?') + '</span>' : '');
       b.onclick = function () { select(kind, o); };
       frag.appendChild(b);
     });
@@ -192,6 +199,7 @@
   }
   function select(kind, o) {
     if (kind === 'sup') S.sup = o; else S.item = o;
+    if (kind === 'sup') renderPicker('item');   // 取引先が変わると「?」（単価未設定）の表示も変わる
     renderSelected();
     if (kind === 'sup') { if (!S.item) { $('itemCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(function () { $('itemSearch').focus(); }, 250); } else $('qtyInput').focus(); }
     else { $('qtyCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(function () { $('qtyInput').focus(); }, 250); }
@@ -206,7 +214,7 @@
       } else { sel.classList.add('hidden'); pick.classList.remove('hidden'); chg.classList.add('hidden'); }
     });
     $('unitLabel').textContent = S.item ? unitLabel(S.item.unit) : '';
-    $('unpricedHint').classList.toggle('hidden', !(S.item && !S.item.priced));
+    $('unpricedHint').classList.toggle('hidden', !(S.item && !isPriced(S.item)));
     updateSaveBtn();
   }
   function change(kind) { if (kind === 'sup') S.sup = null; else S.item = null; renderSelected(); $(kind + 'Search').value = ''; renderPicker(kind); setTimeout(function () { $(kind + 'Search').focus(); }, 50); }
@@ -222,7 +230,7 @@
     if (qty === null) { $('saveError').textContent = t('qtyInvalid'); return; }
     $('saveError').textContent = '';
     var e = { id: uid('E'), createdAt: nowIso(), date: $('dateInput').value, supCode: S.sup.code, supName: S.sup.name, supEn: S.sup.en || '',
-      itemCode: S.item.code, itemName: S.item.name, itemEn: S.item.en || '', unit: S.item.unit, priced: S.item.priced, qty: qty,
+      itemCode: S.item.code, itemName: S.item.name, itemEn: S.item.en || '', unit: S.item.unit, priced: isPriced(S.item), qty: qty,
       note: $('noteInput').value.trim(), user: S.user, status: 'wait', error: '' };
     S.today.unshift(e); saveToday();
     S.queue.push({ id: e.id, date: e.date, supCode: e.supCode, itemCode: e.itemCode, qty: e.qty, note: e.note, user: e.user }); LS.set('gtp_queue', S.queue);
@@ -309,7 +317,7 @@
     S.pin = pin; S.user = user; $('startBtn').disabled = true; $('setupError').textContent = '';
     var done = function () { LS.set('gtp_site', S.site); LS.set('gtp_pin', S.pin); LS.set('gtp_user', S.user); $('startBtn').disabled = false; showApp(); };
     if (!apiReady()) { done(); return; }
-    api('masters').then(function (j) { LS.set(mastersKey(), { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, cancelHours: j.cancelHours || 24 }); done(); })
+    api('masters').then(function (j) { LS.set(mastersKey(), { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, pricePairs: j.pricePairs || [], cancelHours: j.cancelHours || 24 }); done(); })
       .catch(function (err) {
         $('startBtn').disabled = false;
         if (err && err.code === 'bad_pin') { $('setupError').textContent = t('badPin'); return; }

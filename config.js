@@ -10,5 +10,5 @@ window.GT_PURCHASE_CONFIG = {
   apiUrl: '',
   sites: ['長野', '千葉'],
   mock: false,
-  version: '2026-09-03.1'
+  version: '2026-09-08.1'
 };
