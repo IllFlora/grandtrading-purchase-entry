@@ -1,6 +1,7 @@
 /* グラトレ 仕入れ入力 — 現場アプリ本体
  * 方針: ログインなし（拠点PINのみ）。入力は端末内キューに保存してから Apps Script API へ送る。
- *       電波が無くても登録操作は完了し、復帰後に自動再送する。金額・単価はアプリに出さない。
+ *       電波が無くても登録操作は完了し、復帰後に自動再送する。
+ *       単価・金額は画面に出す（2026-09-08 原さん決定。取引先別単価 → 商品マスタ単価 の順で API から受け取る）。
  */
 (function () {
   'use strict';
@@ -27,7 +28,8 @@
       qtyInvalid: '数量を入力してください', pinRequired: 'PINを入力してください', siteRequired: '拠点を選んでください', badPin: 'PINが違います',
       netError: '通信できません。電波を確認してください', offlineStart: 'オフラインのため保存済みマスターで開始します',
       mastersAt: '取得 {t}', mastersNone: '未取得', apiOff: '未設定', mockOn: 'モック（端末内のみ）', selectFirst: '取引先と商品を選んでください',
-      by: '入力', cancelFailed: '取り消せませんでした', mastersUpdated: 'マスターを更新しました', unit_kg: 'kg'
+      by: '入力', cancelFailed: '取り消せませんでした', mastersUpdated: 'マスターを更新しました', unit_kg: 'kg',
+      unitPrice: '単価', amount: '金額', supplierPrice: '取引先別単価'
     },
     en: {
       appTitle: 'Purchase Entry', setupLead: 'Choose your site and enter the PIN (first time only)', site: 'Site', pin: 'PIN', userName: 'Your name (optional)',
@@ -42,7 +44,8 @@
       qtyInvalid: 'Enter a quantity', pinRequired: 'Enter the PIN', siteRequired: 'Choose a site', badPin: 'Wrong PIN',
       netError: 'Cannot reach the server. Check your connection.', offlineStart: 'Offline: starting with cached master data',
       mastersAt: 'fetched {t}', mastersNone: 'not loaded', apiOff: 'not set', mockOn: 'mock (device only)', selectFirst: 'Choose a supplier and an item',
-      by: 'by', cancelFailed: 'Could not cancel', mastersUpdated: 'Master data updated', unit_kg: 'kg'
+      by: 'by', cancelFailed: 'Could not cancel', mastersUpdated: 'Master data updated', unit_kg: 'kg',
+      unitPrice: 'Unit price', amount: 'Amount', supplierPrice: 'supplier price'
     }
   };
   var UNIT_EN = { 'kg': 'kg', '個': 'pcs', '本': 'pcs', '枚': 'pcs', '台': 'units', '箱': 'boxes', '式': 'lot', '一式': 'lot', '袋': 'bags', '円': 'yen' };
@@ -113,15 +116,22 @@
       var m = window.GT_MOCK_MASTERS && window.GT_MOCK_MASTERS[S.site];
       if (!m) throw { code: 'bad_site', message: 'mock: site not found' };
       var log = LS.get('gtp_mock_log', []);
-      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], priced: r[3] !== '' && r[3] !== null }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), pricePairs: m.pricePairs || [], cancelHours: 24 };
+      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], price: r[3] === '' || r[3] == null ? null : Number(r[3]), priced: r[3] !== '' && r[3] !== null }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), prices: m.prices || {}, pricePairs: Object.keys(m.prices || {}), cancelHours: 24 };
       if (action === 'add') {
-        var results = body.entries.map(function (e) { if (log.some(function (l) { return l.id === e.id; })) return { id: e.id, ok: true, dup: true }; log.push({ id: e.id, createdAt: nowIso(), date: e.date, supCode: e.supCode, itemCode: e.itemCode, qty: e.qty, status: '有効', user: e.user, note: e.note, site: S.site }); return { id: e.id, ok: true }; });
+        var mi = {}; m.items.forEach(function (r) { mi[r[0]] = r; }); var mp = m.prices || {};
+        var results = body.entries.map(function (e) {
+          if (log.some(function (l) { return l.id === e.id; })) return { id: e.id, ok: true, dup: true };
+          var it = mi[e.itemCode] || [], vp = mp[e.supCode + '|' + e.itemCode];
+          var price = vp != null ? vp : (it[3] === '' || it[3] == null ? null : Number(it[3])), kind = vp != null ? '取引先別' : (price == null ? '未設定' : 'マスター');
+          log.push({ id: e.id, createdAt: nowIso(), date: e.date, supCode: e.supCode, itemCode: e.itemCode, qty: e.qty, price: price, priceKind: kind, status: '有効', user: e.user, note: e.note, site: S.site });
+          return { id: e.id, ok: true, price: price, priceKind: kind };
+        });
         LS.set('gtp_mock_log', log); return { ok: true, results: results };
       }
       if (action === 'cancel') { log.forEach(function (l) { if (l.id === body.id) l.status = '取消'; }); LS.set('gtp_mock_log', log); return { ok: true }; }
       if (action === 'recent') {
         var items = {}, sups = {}; m.items.forEach(function (r) { items[r[0]] = r; }); m.suppliers.forEach(function (r) { sups[r[0]] = r; });
-        return { ok: true, entries: log.filter(function (l) { return l.site === S.site && l.createdAt.slice(0, 10) === todayStr(); }).map(function (l) { var it = items[l.itemCode] || [], sp = sups[l.supCode] || []; return { id: l.id, createdAt: l.createdAt, date: l.date, supCode: l.supCode, supName: sp[1] || '', itemCode: l.itemCode, itemName: it[1] || '', itemEn: it[2] || '', unit: it[4] || '', qty: l.qty, priced: it[3] !== '' && it[3] != null, status: l.status, user: l.user, note: l.note }; }).reverse() };
+        return { ok: true, entries: log.filter(function (l) { return l.site === S.site && l.createdAt.slice(0, 10) === todayStr(); }).map(function (l) { var it = items[l.itemCode] || [], sp = sups[l.supCode] || []; return { id: l.id, createdAt: l.createdAt, date: l.date, supCode: l.supCode, supName: sp[1] || '', itemCode: l.itemCode, itemName: it[1] || '', itemEn: it[2] || '', unit: it[4] || '', qty: l.qty, priced: l.price != null, price: l.price == null ? null : l.price, amount: l.price == null ? null : l.price * l.qty, priceKind: l.priceKind, status: l.status, user: l.user, note: l.note }; }).reverse() };
       }
       throw { code: 'unknown' };
     });
@@ -146,7 +156,7 @@
     if (cached && !force) useMasters(cached);
     if (!apiReady() && cached) return Promise.resolve(cached);
     return api('masters').then(function (j) {
-      var m = { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, pricePairs: j.pricePairs || [], cancelHours: j.cancelHours || 24 };
+      var m = { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, prices: j.prices || {}, pricePairs: j.pricePairs || [], cancelHours: j.cancelHours || 24 };
       LS.set(mastersKey(), m); useMasters(m); return m;
     }).catch(function (err) {
       if (cached) return cached;
@@ -165,12 +175,29 @@
   }
   function displayName(o) { return S.lang === 'en' && o.en ? o.en : o.name; }
   function subName(o) { return S.lang === 'en' && o.en ? o.name : ''; }
-  // 単価の有無: 商品マスタに単価がある、または「選択中の取引先×この商品」に取引先別単価がある（金額自体はアプリに来ない）
+  // 単価の決定（シート側と同じ順）: 選択中の取引先×この商品の取引先別単価 → 商品マスタの単価 → なし
+  function priceFor(item) {
+    if (!item) return null;
+    var map = (S.masters && S.masters.prices) || {};
+    if (S.sup && map[S.sup.code + '|' + item.code] != null) return { price: Number(map[S.sup.code + '|' + item.code]), kind: 'sup' };
+    if (item.price != null && item.price !== '') return { price: Number(item.price), kind: 'master' };
+    return null;
+  }
   function isPriced(item) {
     if (!item) return false;
-    if (item.priced) return true;
-    var pairs = (S.masters && S.masters.pricePairs) || [];
-    return !!(S.sup && pairs.indexOf(S.sup.code + '|' + item.code) >= 0);
+    if (priceFor(item)) return true;
+    var pairs = (S.masters && S.masters.pricePairs) || [];   // 旧キャッシュ（単価なし）との互換
+    return !!(item.priced || (S.sup && pairs.indexOf(S.sup.code + '|' + item.code) >= 0));
+  }
+  function fmtYen(n) { var v = Math.round(Number(n)); return '¥' + (isFinite(v) ? v.toLocaleString('ja-JP') : '?'); }
+  function priceTag(o) { var p = priceFor(o); return p ? ' ' + fmtYen(p.price) : (isPriced(o) ? '' : ' ・?'); }
+  function updateAmount() {
+    var p = priceFor(S.item), line = $('priceLine');
+    if (!S.item || !p) { line.classList.add('hidden'); return; }
+    line.classList.remove('hidden');
+    $('priceValue').textContent = fmtYen(p.price) + (S.item.unit ? '/' + unitLabel(S.item.unit) : '');
+    var k = $('priceKind'); k.textContent = p.kind === 'sup' ? t('supplierPrice') : ''; k.classList.toggle('hidden', p.kind !== 'sup');
+    var q = qtyValue(); $('amountValue').textContent = q === null ? '—' : fmtYen(q * p.price);
   }
   function renderPicker(kind) {
     if (!S.masters) return;
@@ -191,7 +218,7 @@
       var b = document.createElement('button'); b.type = 'button'; b.className = 'row';
       var sub = subName(o);
       b.innerHTML = '<span class="code">' + esc(o.code) + '</span><span class="name">' + esc(displayName(o)) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
-        (kind === 'item' ? '<span class="tag">' + esc(unitLabel(o.unit)) + (isPriced(o) ? '' : ' ・?') + '</span>' : '');
+        (kind === 'item' ? '<span class="tag">' + esc(unitLabel(o.unit)) + esc(priceTag(o)) + '</span>' : '');
       b.onclick = function () { select(kind, o); };
       frag.appendChild(b);
     });
@@ -209,7 +236,7 @@
       var o = kind === 'sup' ? S.sup : S.item, sel = $(kind + 'Selected'), pick = $(kind + 'Picker'), chg = $(kind + 'Change');
       if (o) {
         var sub = subName(o);
-        sel.innerHTML = '<span class="code">' + esc(o.code) + '</span><span class="name">' + esc(displayName(o)) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' + (kind === 'item' ? '<span class="tag">' + esc(unitLabel(o.unit)) + '</span>' : '');
+        sel.innerHTML = '<span class="code">' + esc(o.code) + '</span><span class="name">' + esc(displayName(o)) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' + (kind === 'item' ? '<span class="tag">' + esc(unitLabel(o.unit)) + esc(priceTag(o)) + '</span>' : '');
         sel.classList.remove('hidden'); pick.classList.add('hidden'); chg.classList.remove('hidden');
       } else { sel.classList.add('hidden'); pick.classList.remove('hidden'); chg.classList.add('hidden'); }
     });
@@ -219,7 +246,7 @@
   }
   function change(kind) { if (kind === 'sup') S.sup = null; else S.item = null; renderSelected(); $(kind + 'Search').value = ''; renderPicker(kind); setTimeout(function () { $(kind + 'Search').focus(); }, 50); }
   function qtyValue() { var v = $('qtyInput').value.replace(/[０-９．]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/,/g, '').trim(); var n = Number(v); return v && isFinite(n) && n > 0 ? n : null; }
-  function updateSaveBtn() { $('saveBtn').disabled = !(S.sup && S.item && qtyValue() !== null && $('dateInput').value); }
+  function updateSaveBtn() { $('saveBtn').disabled = !(S.sup && S.item && qtyValue() !== null && $('dateInput').value); updateAmount(); }
 
   // ─── 登録・キュー ───
   function todayKey() { return 'gtp_today_' + S.site; }
@@ -229,13 +256,14 @@
     if (!S.sup || !S.item) { $('saveError').textContent = t('selectFirst'); return; }
     if (qty === null) { $('saveError').textContent = t('qtyInvalid'); return; }
     $('saveError').textContent = '';
+    var p = priceFor(S.item);
     var e = { id: uid('E'), createdAt: nowIso(), date: $('dateInput').value, supCode: S.sup.code, supName: S.sup.name, supEn: S.sup.en || '',
-      itemCode: S.item.code, itemName: S.item.name, itemEn: S.item.en || '', unit: S.item.unit, priced: isPriced(S.item), qty: qty,
+      itemCode: S.item.code, itemName: S.item.name, itemEn: S.item.en || '', unit: S.item.unit, priced: isPriced(S.item), price: p ? p.price : null, qty: qty,
       note: $('noteInput').value.trim(), user: S.user, status: 'wait', error: '' };
     S.today.unshift(e); saveToday();
     S.queue.push({ id: e.id, date: e.date, supCode: e.supCode, itemCode: e.itemCode, qty: e.qty, note: e.note, user: e.user }); LS.set('gtp_queue', S.queue);
     bumpFreq('sup', e.supCode); bumpFreq('item', e.itemCode);
-    toast(t('saved') + '：' + displayName(S.item) + ' ' + fmtQty(qty) + unitLabel(S.item.unit), 'ok');
+    toast(t('saved') + '：' + displayName(S.item) + ' ' + fmtQty(qty) + unitLabel(S.item.unit) + (p ? ' = ' + fmtYen(qty * p.price) : ''), 'ok');
     S.item = null; $('qtyInput').value = ''; $('noteInput').value = ''; $('itemSearch').value = '';
     renderSelected(); renderPicker('item'); renderToday();
     $('itemCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -249,7 +277,7 @@
     return api('add', { entries: batch, meta: { user: S.user, device: S.device } }).then(function (j) {
       (j.results || []).forEach(function (r) {
         var e = S.today.filter(function (x) { return x.id === r.id; })[0];
-        if (r.ok) { S.queue = S.queue.filter(function (q) { return q.id !== r.id; }); if (e) { e.status = 'ok'; e.error = ''; } }
+        if (r.ok) { S.queue = S.queue.filter(function (q) { return q.id !== r.id; }); if (e) { e.status = 'ok'; e.error = ''; if (r.price !== undefined) e.price = r.price; } }   // 単価はサーバー確定値で上書き
         else { S.queue = S.queue.filter(function (q) { return q.id !== r.id; }); if (e) { e.status = 'error'; e.error = r.error || 'error'; } }
       });
       LS.set('gtp_queue', S.queue); saveToday(); renderToday();
@@ -274,10 +302,10 @@
       var mine = {}; S.today.forEach(function (e) { mine[e.id] = e; });
       (j.entries || []).forEach(function (r) {
         var st = r.status === '取消' ? 'cancel' : 'ok';
-        if (mine[r.id]) { mine[r.id].status = st; mine[r.id].error = ''; }
+        if (mine[r.id]) { mine[r.id].status = st; mine[r.id].error = ''; if (r.price !== undefined) mine[r.id].price = r.price; }
         else {
           var it = S.itemByCode && S.itemByCode[r.itemCode], sp = S.supByCode && S.supByCode[r.supCode];
-          S.today.push({ id: r.id, createdAt: r.createdAt, date: r.date, supCode: r.supCode, supName: r.supName, supEn: sp ? sp.en : '', itemCode: r.itemCode, itemName: r.itemName, itemEn: it ? it.en : '', unit: r.unit, priced: r.priced, qty: r.qty, note: r.note, user: r.user, status: st, remote: true });
+          S.today.push({ id: r.id, createdAt: r.createdAt, date: r.date, supCode: r.supCode, supName: r.supName, supEn: sp ? sp.en : '', itemCode: r.itemCode, itemName: r.itemName, itemEn: it ? it.en : '', unit: r.unit, priced: r.priced, price: r.price == null ? null : r.price, qty: r.qty, note: r.note, user: r.user, status: st, remote: true });
         }
       });
       S.today.sort(function (a, b) { return a.createdAt < b.createdAt ? 1 : -1; });
@@ -295,7 +323,7 @@
       var itName = S.lang === 'en' && e.itemEn ? e.itemEn : e.itemName, spName = S.lang === 'en' && e.supEn ? e.supEn : e.supName;
       var st = e.status === 'ok' ? '<span class="st ok">' + esc(t('sent')) + '</span>' : e.status === 'wait' ? '<span class="st wait">' + esc(t('waiting')) + '</span>' : e.status === 'cancel' ? '<span class="st cancel">' + esc(t('cancelled')) + '</span>' : '<span class="st wait" title="' + esc(e.error) + '">' + esc(t('errorLabel')) + '</span>';
       d.innerHTML = '<span class="t">' + esc(e.createdAt.slice(11, 16)) + '</span><div class="body"><b>' + esc(spName) + '</b><small>' + esc(itName) + (e.date !== td ? ' · ' + esc(e.date) : '') + (e.user ? ' · ' + esc(e.user) : '') + (e.error ? ' · ' + esc(e.error) : '') + '</small></div>' +
-        '<span class="q">' + esc(fmtQty(e.qty)) + '<small> ' + esc(unitLabel(e.unit)) + '</small></span>' + st;
+        '<span class="q">' + esc(fmtQty(e.qty)) + '<small> ' + esc(unitLabel(e.unit)) + '</small>' + (e.price != null ? '<em>' + esc(fmtYen(e.qty * e.price)) + '</em>' : '') + '</span>' + st;
       if (e.status !== 'cancel' && !e.remote) { var x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.textContent = t('cancel'); x.onclick = function () { cancelEntry(e); }; d.appendChild(x); }
       box.appendChild(d);
     });
@@ -317,7 +345,7 @@
     S.pin = pin; S.user = user; $('startBtn').disabled = true; $('setupError').textContent = '';
     var done = function () { LS.set('gtp_site', S.site); LS.set('gtp_pin', S.pin); LS.set('gtp_user', S.user); $('startBtn').disabled = false; showApp(); };
     if (!apiReady()) { done(); return; }
-    api('masters').then(function (j) { LS.set(mastersKey(), { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, pricePairs: j.pricePairs || [], cancelHours: j.cancelHours || 24 }); done(); })
+    api('masters').then(function (j) { LS.set(mastersKey(), { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, prices: j.prices || {}, pricePairs: j.pricePairs || [], cancelHours: j.cancelHours || 24 }); done(); })
       .catch(function (err) {
         $('startBtn').disabled = false;
         if (err && err.code === 'bad_pin') { $('setupError').textContent = t('badPin'); return; }

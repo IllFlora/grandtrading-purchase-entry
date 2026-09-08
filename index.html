@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="仕入れ入力">
 <title>Grand Trading 仕入れ入力</title>
-<link rel="stylesheet" href="styles.css?v=20260902-1">
+<link rel="stylesheet" href="styles.css?v=20260908-1">
 </head>
 <body>
 
@@ -90,6 +90,7 @@
         <span id="unitLabel" class="unit">kg</span>
       </div>
       <input id="noteInput" class="note" maxlength="60" autocomplete="off" data-i18n-placeholder="notePlaceholder" placeholder="メモ（任意）">
+      <div id="priceLine" class="price-line hidden"><span data-i18n="unitPrice">単価</span> <b id="priceValue"></b><span id="priceKind" class="pill hidden"></span><span class="sep"></span><span data-i18n="amount">金額</span> <b id="amountValue">—</b></div>
       <div id="unpricedHint" class="hint hidden" data-i18n="unpricedHint">この商品は単価が都度決めです。数量だけ登録し、金額は管理者がシートで入れます。</div>
       <button id="saveBtn" class="primary big" type="button" disabled data-i18n="save">登録する</button>
       <div id="saveError" class="error"></div>
@@ -123,7 +124,7 @@
   </div>
 </div>
 
-<script src="config.js?v=20260902-1"></script>
-<script src="app.js?v=20260902-1"></script>
+<script src="config.js?v=20260908-1"></script>
+<script src="app.js?v=20260908-1"></script>
 </body>
 </html>
