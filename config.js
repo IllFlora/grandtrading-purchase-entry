@@ -4,11 +4,11 @@
 // mock:    true にすると API を使わず端末内だけで動く（画面確認・デモ用。mock-data.js を読み込む）。index.html?mock=1 でも同じ
 window.GT_PURCHASE_CONFIG = {
   apiUrls: {
-    '長野': '',
-    '千葉': ''
+    '長野': 'https://script.google.com/macros/s/AKfycbxUcq8pgHVHjt1Mv5t_P2bM_s1r2u0qjqq1BaO9r68APAuBGJus4aHwWXaNx_Cfs72g/exec',
+    '千葉': 'https://script.google.com/macros/s/AKfycbzjsgLbL7Mj4yXiunmetNVQ2c-Eni_fjDl9zHZg0EDm9MlzOXPigLpFpppGw_YUnd65/exec'
   },
   apiUrl: '',
   sites: ['長野', '千葉'],
   mock: false,
-  version: '2026-09-08.2'
+  version: '2026-09-08.3'
 };
