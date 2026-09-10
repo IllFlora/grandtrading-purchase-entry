@@ -1,5 +1,7 @@
 /* グラトレ 仕入れ入力 — 現場アプリ本体
- * 方針: ログインなし（拠点PINのみ）。入力は端末内キューに保存してから Apps Script API へ送る。
+ * 方針: ログインなし。現場は拠点を選ぶだけ（2026-09-10 原さん決定でPIN入力も廃止）。
+ *       PIN は config.js の pins から自動で送る（GAS側の検証はそのまま。変えたい時は設定シートと config.js の両方を直す）。
+ *       入力は端末内キューに保存してから Apps Script API へ送る。
  *       電波が無くても登録操作は完了し、復帰後に自動再送する。
  *       単価・金額は画面に出す（2026-09-08 原さん決定。取引先別単価 → 商品マスタ単価 の順で API から受け取る）。
  */
@@ -16,32 +18,32 @@
 
   var I18N = {
     ja: {
-      appTitle: '仕入れ入力', setupLead: '拠点とPINを設定してください（初回のみ）', site: '拠点', pin: 'PIN', userName: '入力者（任意）',
+      appTitle: '仕入れ入力', setupLead: 'どこの拠点ですか？（初回だけ）', site: '拠点', userName: 'あなたの名前（入れなくてもOK）',
       userPlaceholder: '例: 山田', start: 'はじめる', date: '日付', today: '今日', supplier: '取引先', item: '商品', qty: '数量', change: '変更',
       searchPlaceholder: 'コードまたは名前で検索', notePlaceholder: 'メモ（任意）',
       unpricedHint: 'この商品は単価が都度決めです。数量だけ登録し、金額は管理者がシートで入れます。',
       save: '登録する', todayEntries: '本日の登録', refresh: '更新', retry: '再送',
       apiNotSet: 'API URL が未設定です（config.js）。登録は端末内に保存され、設定後に送信されます。',
       settings: '設定', language: '言語', masters: 'マスター', reload: '再取得', pendingLabel: '送信待ち', version: '版',
-      changeSite: '拠点・PINを設定し直す', frequent: 'よく使う', noMatch: '該当なし', saved: '登録しました', sent: '送信済み', waiting: '送信待ち',
+      changeSite: '拠点を選び直す', frequent: 'よく使う', noMatch: '該当なし', saved: '登録しました', sent: '送信済み', waiting: '送信待ち',
       cancelled: '取消', errorLabel: 'エラー', cancel: '取消', confirmCancel: 'この登録を取り消しますか？', pendingText: '送信待ち {n}件',
-      qtyInvalid: '数量を入力してください', pinRequired: 'PINを入力してください', siteRequired: '拠点を選んでください', badPin: 'PINが違います',
+      qtyInvalid: '数量を入力してください', siteRequired: '拠点を選んでください', badPin: '登録できませんでした。管理者に連絡してください',
       netError: '通信できません。電波を確認してください', offlineStart: 'オフラインのため保存済みマスターで開始します',
       mastersAt: '取得 {t}', mastersNone: '未取得', apiOff: '未設定', mockOn: 'モック（端末内のみ）', selectFirst: '取引先と商品を選んでください',
       by: '入力', cancelFailed: '取り消せませんでした', mastersUpdated: 'マスターを更新しました', unit_kg: 'kg',
       unitPrice: '単価', amount: '金額', supplierPrice: '取引先別単価'
     },
     en: {
-      appTitle: 'Purchase Entry', setupLead: 'Choose your site and enter the PIN (first time only)', site: 'Site', pin: 'PIN', userName: 'Your name (optional)',
+      appTitle: 'Purchase Entry', setupLead: 'Which site are you at? (first time only)', site: 'Site', userName: 'Your name (optional)',
       userPlaceholder: 'e.g. Yamada', start: 'Start', date: 'Date', today: 'Today', supplier: 'Supplier', item: 'Item', qty: 'Quantity', change: 'Change',
       searchPlaceholder: 'Search by code or name', notePlaceholder: 'Note (optional)',
       unpricedHint: 'This item has no fixed unit price. Enter the quantity only; the office sets the amount in the sheet.',
       save: 'Save', todayEntries: "Today's entries", refresh: 'Refresh', retry: 'Retry',
       apiNotSet: 'API URL is not set (config.js). Entries stay on this device and are sent once it is set.',
       settings: 'Settings', language: 'Language', masters: 'Master data', reload: 'Reload', pendingLabel: 'Pending', version: 'Version',
-      changeSite: 'Change site / PIN', frequent: 'Frequent', noMatch: 'No match', saved: 'Saved', sent: 'Sent', waiting: 'Pending',
+      changeSite: 'Change site', frequent: 'Frequent', noMatch: 'No match', saved: 'Saved', sent: 'Sent', waiting: 'Pending',
       cancelled: 'Cancelled', errorLabel: 'Error', cancel: 'Cancel', confirmCancel: 'Cancel this entry?', pendingText: '{n} pending',
-      qtyInvalid: 'Enter a quantity', pinRequired: 'Enter the PIN', siteRequired: 'Choose a site', badPin: 'Wrong PIN',
+      qtyInvalid: 'Enter a quantity', siteRequired: 'Choose a site', badPin: 'Could not save. Please contact the administrator.',
       netError: 'Cannot reach the server. Check your connection.', offlineStart: 'Offline: starting with cached master data',
       mastersAt: 'fetched {t}', mastersNone: 'not loaded', apiOff: 'not set', mockOn: 'mock (device only)', selectFirst: 'Choose a supplier and an item',
       by: 'by', cancelFailed: 'Could not cancel', mastersUpdated: 'Master data updated', unit_kg: 'kg',
@@ -80,6 +82,8 @@
 
   // ─── 通信 ───
   function apiUrlFor(site) { return (CFG.apiUrls && CFG.apiUrls[site]) || CFG.apiUrl || ''; }
+  // PIN は現場に入力させない。config.js の値を使う（古い端末に残っている保存値より config を優先）
+  function pinFor(site) { return (CFG.pins && CFG.pins[site]) || CFG.pin || S.pin || ''; }
   function apiReady() { return !!(CFG.mock || apiUrlFor(S.site)); }
   function setNet(state) { S.netOk = state; var d = $('netDot'); d.className = 'dot ' + (state === true ? 'ok' : state === false ? 'bad' : navigator.onLine ? 'busy' : 'bad'); }
   function api(action, body, opts) {
@@ -89,7 +93,7 @@
     if (!url) return Promise.reject({ code: 'no_api', message: t('apiNotSet') });
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
     var timer = ctl && setTimeout(function () { ctl.abort(); }, opts.timeout || 25000);
-    var base = { action: action, site: S.site, pin: S.pin };
+    var base = { action: action, site: S.site, pin: pinFor(S.site) };
     var req;
     if (action === 'add' || action === 'cancel') {
       Object.keys(base).forEach(function (k) { body[k] = base[k]; });
@@ -335,15 +339,14 @@
     $('app').classList.add('hidden'); $('setup').classList.remove('hidden');
     var box = $('siteButtons'); box.innerHTML = '';
     (CFG.sites || ['長野', '千葉']).forEach(function (s) { var b = document.createElement('button'); b.type = 'button'; b.className = 'site-btn' + (S.site === s ? ' active' : ''); b.textContent = siteLabel(s); b.onclick = function () { S.site = s; box.querySelectorAll('.site-btn').forEach(function (x) { x.classList.toggle('active', x === b); }); }; box.appendChild(b); });
-    $('pinInput').value = S.pin || ''; $('userInput').value = S.user || ''; $('setupError').textContent = err || '';
+    $('userInput').value = S.user || ''; $('setupError').textContent = err || '';
     applyI18n();
   }
   function start() {
-    var pin = $('pinInput').value.trim(), user = $('userInput').value.trim();
+    var user = $('userInput').value.trim();
     if (!S.site) { $('setupError').textContent = t('siteRequired'); return; }
-    if (!pin) { $('setupError').textContent = t('pinRequired'); return; }
-    S.pin = pin; S.user = user; $('startBtn').disabled = true; $('setupError').textContent = '';
-    var done = function () { LS.set('gtp_site', S.site); LS.set('gtp_pin', S.pin); LS.set('gtp_user', S.user); $('startBtn').disabled = false; showApp(); };
+    S.user = user; $('startBtn').disabled = true; $('setupError').textContent = '';
+    var done = function () { LS.set('gtp_site', S.site); LS.set('gtp_user', S.user); $('startBtn').disabled = false; showApp(); };
     if (!apiReady()) { done(); return; }
     api('masters').then(function (j) { LS.set(mastersKey(), { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, prices: j.prices || {}, pricePairs: j.pricePairs || [], cancelHours: j.cancelHours || 24 }); done(); })
       .catch(function (err) {
@@ -367,13 +370,17 @@
   // ─── 起動 ───
   function init() {
     S.lang = LS.get('gtp_lang', (navigator.language || 'ja').indexOf('ja') === 0 ? 'ja' : 'en');
-    S.site = LS.get('gtp_site', ''); S.pin = LS.get('gtp_pin', ''); S.user = LS.get('gtp_user', '');
+    S.site = LS.get('gtp_site', ''); S.user = LS.get('gtp_user', '');
+    LS.del('gtp_pin');   // 旧版が端末に保存していたPINは残さない
+    // 拠点ごとのURL（?site=長野）で開くと拠点選択を飛ばせる。QRやホーム画面用
+    var q = /[?&]site=([^&]+)/.exec(location.search);
+    if (q) { var qs = decodeURIComponent(q[1]); if ((CFG.sites || []).indexOf(qs) >= 0) S.site = qs; }
     S.device = LS.get('gtp_device', ''); if (!S.device) { S.device = uid('D'); LS.set('gtp_device', S.device); }
 
     document.querySelectorAll('.lang').forEach(function (b) { b.onclick = function () { setLang(b.getAttribute('data-lang')); }; });
     $('langBtn').onclick = function () { setLang(S.lang === 'ja' ? 'en' : 'ja'); };
     $('startBtn').onclick = start;
-    $('pinInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') start(); });
+    $('userInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') start(); });
     $('todayBtn').onclick = function () { $('dateInput').value = todayStr(); updateSaveBtn(); };
     $('dateInput').onchange = updateSaveBtn;
     $('supSearch').oninput = function () { renderPicker('sup'); }; $('itemSearch').oninput = function () { renderPicker('item'); };
@@ -392,7 +399,7 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden && !$('app').classList.contains('hidden')) { flush().then(refreshRecent); } });
     setInterval(function () { if (!$('app').classList.contains('hidden')) flush(); }, 30000);
 
-    if (S.site && S.pin) showApp(); else showSetup();
+    if (S.site) showApp(); else showSetup();
   }
   init();
 })();
