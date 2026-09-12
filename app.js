@@ -31,7 +31,10 @@
       netError: '通信できません。電波を確認してください', offlineStart: 'オフラインのため保存済みマスターで開始します',
       mastersAt: '取得 {t}', mastersNone: '未取得', apiOff: '未設定', mockOn: 'モック（端末内のみ）', selectFirst: '取引先と商品を選んでください',
       by: '入力', cancelFailed: '取り消せませんでした', mastersUpdated: 'マスターを更新しました', unit_kg: 'kg',
-      unitPrice: '単価', amount: '金額', supplierPrice: '取引先別単価'
+      unitPrice: '単価', amount: '金額', supplierPrice: '取引先別単価',
+      addSupplier: '＋「{name}」を新しい取引先として追加', confirmAddSup: '「{name}」を取引先に追加します。\n会社名・店名にまちがいはありませんか？',
+      supAdded: '取引先を追加しました：{code} {name}', supExists: 'すでに登録されていました：{code} {name}',
+      needOnline: '取引先の追加は、電波のあるところでしてください', featureNotReady: 'この機能はまだ使えません。管理者に連絡してください'
     },
     en: {
       appTitle: 'Purchase Entry', setupLead: 'Which site are you at? (first time only)', site: 'Site', userName: 'Your name (optional)',
@@ -47,7 +50,10 @@
       netError: 'Cannot reach the server. Check your connection.', offlineStart: 'Offline: starting with cached master data',
       mastersAt: 'fetched {t}', mastersNone: 'not loaded', apiOff: 'not set', mockOn: 'mock (device only)', selectFirst: 'Choose a supplier and an item',
       by: 'by', cancelFailed: 'Could not cancel', mastersUpdated: 'Master data updated', unit_kg: 'kg',
-      unitPrice: 'Unit price', amount: 'Amount', supplierPrice: 'supplier price'
+      unitPrice: 'Unit price', amount: 'Amount', supplierPrice: 'supplier price',
+      addSupplier: '+ Add "{name}" as a new supplier', confirmAddSup: 'Add "{name}" as a supplier?\nPlease check the company or shop name is correct.',
+      supAdded: 'Supplier added: {code} {name}', supExists: 'Already registered: {code} {name}',
+      needOnline: 'You need a connection to add a supplier. Try again where you have signal.', featureNotReady: 'This is not available yet. Please contact the administrator.'
     }
   };
   var UNIT_EN = { 'kg': 'kg', '個': 'pcs', '本': 'pcs', '枚': 'pcs', '台': 'units', '箱': 'boxes', '式': 'lot', '一式': 'lot', '袋': 'bags', '円': 'yen' };
@@ -95,7 +101,7 @@
     var timer = ctl && setTimeout(function () { ctl.abort(); }, opts.timeout || 25000);
     var base = { action: action, site: S.site, pin: pinFor(S.site) };
     var req;
-    if (action === 'add' || action === 'cancel') {
+    if (action === 'add' || action === 'cancel' || action === 'addSupplier') {
       Object.keys(base).forEach(function (k) { body[k] = base[k]; });
       req = fetch(url, { method: 'POST', body: JSON.stringify(body), signal: ctl && ctl.signal, redirect: 'follow' });
     } else {
@@ -120,7 +126,16 @@
       var m = window.GT_MOCK_MASTERS && window.GT_MOCK_MASTERS[S.site];
       if (!m) throw { code: 'bad_site', message: 'mock: site not found' };
       var log = LS.get('gtp_mock_log', []);
-      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], price: r[3] === '' || r[3] == null ? null : Number(r[3]), priced: r[3] !== '' && r[3] !== null }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), prices: m.prices || {}, pricePairs: Object.keys(m.prices || {}), cancelHours: 24 };
+      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], price: r[3] === '' || r[3] == null ? null : Number(r[3]), priced: r[3] !== '' && r[3] !== null }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), prices: m.prices || {}, pricePairs: Object.keys(m.prices || {}), features: ['addSupplier'], cancelHours: 24 };
+      if (action === 'addSupplier') {
+        var nm = String(body.name || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
+        if (!nm) throw { code: 'bad_name', message: 'mock: name required' };
+        var same = m.suppliers.filter(function (r) { return normName(r[1]) === normName(nm); })[0];
+        if (same) return { ok: true, dup: true, supplier: { code: same[0], name: same[1], en: same[2] } };
+        var code = m.suppliers.reduce(function (a, r) { return Math.max(a, Number(r[0]) || 0); }, 0) + 1;
+        m.suppliers.push([code, nm, '', 'アプリから追加（モック）']);
+        return { ok: true, created: true, supplier: { code: code, name: nm, en: '' } };
+      }
       if (action === 'add') {
         var mi = {}; m.items.forEach(function (r) { mi[r[0]] = r; }); var mp = m.prices || {};
         var results = body.entries.map(function (e) {
@@ -160,7 +175,7 @@
     if (cached && !force) useMasters(cached);
     if (!apiReady() && cached) return Promise.resolve(cached);
     return api('masters').then(function (j) {
-      var m = { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, prices: j.prices || {}, pricePairs: j.pricePairs || [], cancelHours: j.cancelHours || 24 };
+      var m = { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, prices: j.prices || {}, pricePairs: j.pricePairs || [], features: j.features || [], cancelHours: j.cancelHours || 24 };
       LS.set(mastersKey(), m); useMasters(m); return m;
     }).catch(function (err) {
       if (cached) return cached;
@@ -172,11 +187,14 @@
   function freqKey(kind) { return 'gtp_freq_' + S.site + '_' + kind; }
   function bumpFreq(kind, code) { var f = LS.get(freqKey(kind), {}); f[code] = (f[code] || 0) + 1; LS.set(freqKey(kind), f); }
   function frequentCodes(kind) { var f = LS.get(freqKey(kind), {}); return Object.keys(f).sort(function (a, b) { return f[b] - f[a]; }).slice(0, 8).map(Number); }
+  // 検索は全角・半角、スペース、大文字小文字を区別しない（「ﾐｰﾄ」でも「ミート」が出る、「６４」でもコード64が出る）
   function matches(q, o) {
     if (!q) return true;
-    q = q.toLowerCase();
-    return String(o.code) === q || String(o.code).indexOf(q) === 0 || (o.name || '').toLowerCase().indexOf(q) >= 0 || (o.en || '').toLowerCase().indexOf(q) >= 0;
+    var nq = normName(q); if (!nq) return true;
+    return String(o.code) === nq || String(o.code).indexOf(nq) === 0 || normName(o.name).indexOf(nq) >= 0 || normName(o.en).indexOf(nq) >= 0;
   }
+  function normName(s) { return String(s == null ? '' : s).normalize('NFKC').replace(/\s+/g, '').toLowerCase(); }
+  function hasFeature(f) { return !!(S.masters && (S.masters.features || []).indexOf(f) >= 0); }
   function displayName(o) { return S.lang === 'en' && o.en ? o.en : o.name; }
   function subName(o) { return S.lang === 'en' && o.en ? o.name : ''; }
   // 単価の決定（シート側と同じ順）: 選択中の取引先×この商品の取引先別単価 → 商品マスタの単価 → なし
@@ -216,6 +234,7 @@
     });
     var box = $(kind + 'List'); box.innerHTML = '';
     var hits = list.filter(function (o) { return matches(q, o); });
+    if (kind === 'sup') renderAddSupplier(q, list);
     if (!hits.length) { box.innerHTML = '<div class="empty">' + esc(t('noMatch')) + '</div>'; return; }
     var frag = document.createDocumentFragment();
     hits.forEach(function (o) {
@@ -227,6 +246,36 @@
       frag.appendChild(b);
     });
     box.appendChild(frag);
+  }
+  // 検索した名前がどの取引先とも一致しないとき、その名前で追加するボタンを出す（数字だけの検索はコード検索なので出さない）
+  function renderAddSupplier(q, list) {
+    var btn = $('supAdd'); if (!btn) return;
+    var show = hasFeature('addSupplier') && normName(q).length >= 2 && !/^[0-9]+$/.test(normName(q)) &&
+      !list.some(function (o) { return normName(o.name) === normName(q); });
+    btn.classList.toggle('hidden', !show);
+    if (show) { btn.textContent = t('addSupplier', { name: q }); btn.dataset.name = q; }
+  }
+  function addSupplier() {
+    var btn = $('supAdd'), name = (btn.dataset.name || '').trim();
+    if (!name) return;
+    if (!CFG.mock && (!navigator.onLine || !apiReady())) { toast(t('needOnline'), 'bad'); return; }
+    if (!confirm(t('confirmAddSup', { name: name }))) return;
+    btn.disabled = true;
+    api('addSupplier', { name: name, meta: { user: S.user, device: S.device } }).then(function (j) {
+      var sp = j.supplier;
+      if (!S.masters.suppliers.some(function (o) { return o.code === sp.code; })) S.masters.suppliers.push(sp);
+      S.masters.suppliers.sort(function (a, b) { return a.code - b.code; });
+      LS.set(mastersKey(), S.masters);
+      $('supSearch').value = '';
+      useMasters(S.masters);
+      select('sup', S.supByCode[sp.code]);
+      bumpFreq('sup', sp.code);
+      toast(t(j.created ? 'supAdded' : 'supExists', { code: sp.code, name: sp.name }), 'ok');
+    }).catch(function (err) {
+      if (err && err.code === 'network') toast(t('needOnline'), 'bad');
+      else if (err && /unknown/.test(err.message || err.code || '')) toast(t('featureNotReady'), 'bad');
+      else toast((err && err.message) || t('netError'), 'bad');
+    }).then(function () { btn.disabled = false; });
   }
   function select(kind, o) {
     if (kind === 'sup') S.sup = o; else S.item = o;
@@ -348,7 +397,7 @@
     S.user = user; $('startBtn').disabled = true; $('setupError').textContent = '';
     var done = function () { LS.set('gtp_site', S.site); LS.set('gtp_user', S.user); $('startBtn').disabled = false; showApp(); };
     if (!apiReady()) { done(); return; }
-    api('masters').then(function (j) { LS.set(mastersKey(), { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, prices: j.prices || {}, pricePairs: j.pricePairs || [], cancelHours: j.cancelHours || 24 }); done(); })
+    api('masters').then(function (j) { LS.set(mastersKey(), { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, prices: j.prices || {}, pricePairs: j.pricePairs || [], features: j.features || [], cancelHours: j.cancelHours || 24 }); done(); })
       .catch(function (err) {
         $('startBtn').disabled = false;
         if (err && err.code === 'bad_pin') { $('setupError').textContent = t('badPin'); return; }
@@ -384,7 +433,8 @@
     $('todayBtn').onclick = function () { $('dateInput').value = todayStr(); updateSaveBtn(); };
     $('dateInput').onchange = updateSaveBtn;
     $('supSearch').oninput = function () { renderPicker('sup'); }; $('itemSearch').oninput = function () { renderPicker('item'); };
-    $('supChange').onclick = function () { change('sup'); }; $('itemChange').onclick = function () { change('item'); };
+    $('supChange').onclick = function () { change('sup'); };
+    $('supAdd').onclick = addSupplier; $('itemChange').onclick = function () { change('item'); };
     $('qtyInput').oninput = updateSaveBtn;
     $('qtyInput').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !$('saveBtn').disabled) save(); });
     $('saveBtn').onclick = save;
