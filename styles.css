@@ -130,3 +130,16 @@ main{padding:12px;max-width:720px;margin:0 auto}
 .add-actions{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:8px}
 .add-actions .primary{padding:12px;font-size:17px}
 .price-line .pill.warn{color:var(--amber);background:var(--amberbg)}
+/* 最近の登録: 取消・数量を直す（2026-09-13） */
+.entry{flex-direction:column;align-items:stretch;gap:8px}
+.entry .line{display:flex;align-items:center;gap:10px}
+.entry .t i{display:block;font-style:normal;font-weight:800;color:var(--ink)}
+.entry .acts{display:flex;justify-content:flex-end;gap:8px}
+.entry .fx{flex:none;border:1px solid var(--line);background:#fff;color:var(--blue);border-radius:8px;padding:6px 10px;font-weight:800;cursor:pointer;font-size:13px}
+.entry .fixbox{display:flex;align-items:center;gap:8px}
+.entry .fixbox input{flex:1;min-width:0;border:1.5px solid var(--blue);border-radius:8px;padding:8px 10px;font-size:18px;text-align:right;font-family:inherit}
+.entry .fixbox .u{color:var(--muted);font-weight:700}
+.entry .fixbox button{flex:none;border:0;border-radius:8px;padding:9px 12px;font-weight:800;cursor:pointer;font-size:14px}
+.entry .fixbox .fx-save{background:var(--blue);color:#fff}
+.entry .fixbox .fx-save:disabled{opacity:.55}
+.entry .fixbox .fx-close{background:#eef1f4;color:var(--ink)}

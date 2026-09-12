@@ -21,31 +21,32 @@
       appTitle: '仕入れ入力', setupLead: 'どこの拠点ですか？（初回だけ）', site: '拠点', userName: 'あなたの名前（入れなくてもOK）',
       userPlaceholder: '例: 山田', start: 'はじめる', date: '日付', today: '今日', supplier: '取引先', item: '商品', qty: '数量', change: '変更',
       searchPlaceholder: 'コードまたは名前で検索', notePlaceholder: 'メモ（任意）',
-      unpricedHint: 'この商品は単価が都度決めです。数量だけ登録し、金額は管理者がシートで入れます。',
-      save: '登録する', todayEntries: '本日の登録', refresh: '更新', retry: '再送',
+      unpricedHint: 'この商品は単価が都度決めです。数量だけ登録し、金額は経理がシートで入れます。',
+      save: '登録する', todayEntries: '最近の登録（3日分）', refresh: '更新', retry: '再送',
       apiNotSet: 'API URL が未設定です（config.js）。登録は端末内に保存され、設定後に送信されます。',
       settings: '設定', language: '言語', masters: 'マスター', reload: '再取得', pendingLabel: '送信待ち', version: '版',
       changeSite: '拠点を選び直す', frequent: 'よく使う', noMatch: '該当なし', saved: '登録しました', sent: '送信済み', waiting: '送信待ち',
       cancelled: '取消', errorLabel: 'エラー', cancel: '取消', confirmCancel: 'この登録を取り消しますか？', pendingText: '送信待ち {n}件',
-      qtyInvalid: '数量を入力してください', siteRequired: '拠点を選んでください', badPin: '登録できませんでした。管理者に連絡してください',
+      qtyInvalid: '数量を入力してください', siteRequired: '拠点を選んでください', badPin: '登録できませんでした。経理に連絡してください',
       netError: '通信できません。電波を確認してください', offlineStart: 'オフラインのため保存済みマスターで開始します',
       mastersAt: '取得 {t}', mastersNone: '未取得', apiOff: '未設定', mockOn: 'モック（端末内のみ）', selectFirst: '取引先と商品を選んでください',
       by: '入力', cancelFailed: '取り消せませんでした', mastersUpdated: 'マスターを更新しました', unit_kg: 'kg',
       unitPrice: '単価', amount: '金額', supplierPrice: '取引先別単価',
       addSupplier: '＋「{name}」を新しい取引先として追加', confirmAddSup: '「{name}」を取引先に追加します。\n会社名・店名にまちがいはありませんか？',
       supAdded: '取引先を追加しました：{code} {name}', supExists: 'すでに登録されていました：{code} {name}',
-      needOnline: '追加は、電波のあるところでしてください', featureNotReady: 'この機能はまだ使えません。管理者に連絡してください',
+      needOnline: '追加は、電波のあるところでしてください', featureNotReady: 'この機能はまだ使えません。経理に連絡してください',
       addItem: '＋「{name}」を新しい商品として追加', newItemTitle: '新しい商品を追加', itemNameLabel: '商品名', unitWord: '単位',
-      priceYen: '単価（円）', priceHint: '単価がわからなければ空欄でOK。入れた単価は事務所が月末に確認します',
+      priceYen: '単価（円）', priceHint: '単価がわからなければ空欄でOK。入れた単価は経理が月末に確認します',
       addItemSubmit: '追加する', cancelAdd: 'やめる', itemAdded: '商品を追加しました：{code} {name}', itemExists: 'すでに登録されていました：{code} {name}',
-      nameRequired: '商品名を入れてください', priceInvalid: '単価は数字で入れてください', pendingPrice: '現場入力の単価'
+      nameRequired: '商品名を入れてください', priceInvalid: '単価は数字で入れてください', pendingPrice: '現場入力の単価',
+      fixQty: '数量を直す', fixSave: '直す', fixClose: 'やめる', qtyFixed: '数量を直しました：{from} → {to}', needOnlineFix: '数量を直すのは、電波のあるところでしてください'
     },
     en: {
       appTitle: 'Purchase Entry', setupLead: 'Which site are you at? (first time only)', site: 'Site', userName: 'Your name (optional)',
       userPlaceholder: 'e.g. Yamada', start: 'Start', date: 'Date', today: 'Today', supplier: 'Supplier', item: 'Item', qty: 'Quantity', change: 'Change',
       searchPlaceholder: 'Search by code or name', notePlaceholder: 'Note (optional)',
       unpricedHint: 'This item has no fixed unit price. Enter the quantity only; the office sets the amount in the sheet.',
-      save: 'Save', todayEntries: "Today's entries", refresh: 'Refresh', retry: 'Retry',
+      save: 'Save', todayEntries: 'Recent entries (3 days)', refresh: 'Refresh', retry: 'Retry',
       apiNotSet: 'API URL is not set (config.js). Entries stay on this device and are sent once it is set.',
       settings: 'Settings', language: 'Language', masters: 'Master data', reload: 'Reload', pendingLabel: 'Pending', version: 'Version',
       changeSite: 'Change site', frequent: 'Frequent', noMatch: 'No match', saved: 'Saved', sent: 'Sent', waiting: 'Pending',
@@ -61,7 +62,8 @@
       addItem: '+ Add "{name}" as a new item', newItemTitle: 'Add a new item', itemNameLabel: 'Item name', unitWord: 'Unit',
       priceYen: 'Unit price (yen)', priceHint: 'Leave the price blank if you do not know it. The office checks any price you enter at month end.',
       addItemSubmit: 'Add', cancelAdd: 'Cancel', itemAdded: 'Item added: {code} {name}', itemExists: 'Already registered: {code} {name}',
-      nameRequired: 'Enter the item name', priceInvalid: 'Enter the price as a number', pendingPrice: 'price set on site'
+      nameRequired: 'Enter the item name', priceInvalid: 'Enter the price as a number', pendingPrice: 'price set on site',
+      fixQty: 'Fix qty', fixSave: 'Save', fixClose: 'Close', qtyFixed: 'Quantity fixed: {from} → {to}', needOnlineFix: 'You need a connection to fix an entry.'
     }
   };
   var UNIT_EN = { 'kg': 'kg', '個': 'pcs', '本': 'pcs', '枚': 'pcs', '台': 'units', '箱': 'boxes', '式': 'lot', '一式': 'lot', '袋': 'bags', '円': 'yen' };
@@ -109,7 +111,7 @@
     var timer = ctl && setTimeout(function () { ctl.abort(); }, opts.timeout || 25000);
     var base = { action: action, site: S.site, pin: pinFor(S.site) };
     var req;
-    if (action === 'add' || action === 'cancel' || action === 'addSupplier' || action === 'addItem') {
+    if (action === 'add' || action === 'cancel' || action === 'fix' || action === 'addSupplier' || action === 'addItem') {
       Object.keys(base).forEach(function (k) { body[k] = base[k]; });
       req = fetch(url, { method: 'POST', body: JSON.stringify(body), signal: ctl && ctl.signal, redirect: 'follow' });
     } else {
@@ -134,7 +136,7 @@
       var m = window.GT_MOCK_MASTERS && window.GT_MOCK_MASTERS[S.site];
       if (!m) throw { code: 'bad_site', message: 'mock: site not found' };
       var log = LS.get('gtp_mock_log', []);
-      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], price: r[3] === '' || r[3] == null ? null : Number(r[3]), priced: r[3] !== '' && r[3] !== null, pending: String(r[5] || '').indexOf('単価要確認') >= 0 }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), prices: m.prices || {}, pricePairs: Object.keys(m.prices || {}), features: ['addSupplier', 'addItem'], cancelHours: 24 };
+      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], price: r[3] === '' || r[3] == null ? null : Number(r[3]), priced: r[3] !== '' && r[3] !== null, pending: String(r[5] || '').indexOf('単価要確認') >= 0 }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), prices: m.prices || {}, pricePairs: Object.keys(m.prices || {}), features: ['addSupplier', 'addItem', 'fix'], cancelHours: 0 };
       if (action === 'addItem') {
         var inm = String(body.name || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
         var same2 = m.items.filter(function (r) { return normName(r[1]) === normName(inm); })[0];
@@ -165,9 +167,20 @@
         LS.set('gtp_mock_log', log); return { ok: true, results: results };
       }
       if (action === 'cancel') { log.forEach(function (l) { if (l.id === body.id) l.status = '取消'; }); LS.set('gtp_mock_log', log); return { ok: true }; }
+      if (action === 'fix') {
+        var src = log.filter(function (l) { return l.id === body.id; })[0];
+        if (!src) throw { code: 'not_found', message: 'mock: not found' };
+        if (log.some(function (l) { return l.id === body.newId; })) return { ok: true, dup: true };
+        src.status = '取消';
+        var nw = JSON.parse(JSON.stringify(src)); nw.id = body.newId; nw.createdAt = nowIso(); nw.qty = Number(body.qty); nw.status = '有効'; nw.note = '数量修正';
+        log.push(nw); LS.set('gtp_mock_log', log);
+        var mi2 = {}, ms2 = {}; m.items.forEach(function (r) { mi2[r[0]] = r; }); m.suppliers.forEach(function (r) { ms2[r[0]] = r; });
+        var it2 = mi2[nw.itemCode] || [], sp2 = ms2[nw.supCode] || [];
+        return { ok: true, entry: { id: nw.id, createdAt: nw.createdAt, date: nw.date, supCode: nw.supCode, supName: sp2[1] || '', itemCode: nw.itemCode, itemName: it2[1] || '', unit: it2[4] || '', qty: nw.qty, price: nw.price, priceKind: nw.priceKind, user: nw.user, note: nw.note } };
+      }
       if (action === 'recent') {
         var items = {}, sups = {}; m.items.forEach(function (r) { items[r[0]] = r; }); m.suppliers.forEach(function (r) { sups[r[0]] = r; });
-        return { ok: true, entries: log.filter(function (l) { return l.site === S.site && l.createdAt.slice(0, 10) === todayStr(); }).map(function (l) { var it = items[l.itemCode] || [], sp = sups[l.supCode] || []; return { id: l.id, createdAt: l.createdAt, date: l.date, supCode: l.supCode, supName: sp[1] || '', itemCode: l.itemCode, itemName: it[1] || '', itemEn: it[2] || '', unit: it[4] || '', qty: l.qty, priced: l.price != null, price: l.price == null ? null : l.price, amount: l.price == null ? null : l.price * l.qty, priceKind: l.priceKind, status: l.status, user: l.user, note: l.note }; }).reverse() };
+        return { ok: true, entries: log.filter(function (l) { return l.site === S.site && l.createdAt.slice(0, 10) >= daysAgoStr(RECENT_DAYS - 1); }).map(function (l) { var it = items[l.itemCode] || [], sp = sups[l.supCode] || []; return { id: l.id, createdAt: l.createdAt, date: l.date, supCode: l.supCode, supName: sp[1] || '', itemCode: l.itemCode, itemName: it[1] || '', itemEn: it[2] || '', unit: it[4] || '', qty: l.qty, priced: l.price != null, price: l.price == null ? null : l.price, amount: l.price == null ? null : l.price * l.qty, priceKind: l.priceKind, status: l.status, user: l.user, note: l.note }; }).reverse() };
       }
       throw { code: 'unknown' };
     });
@@ -402,13 +415,13 @@
   }
   function cancelEntry(e) {
     if (!confirm(t('confirmCancel'))) return;
-    if (e.status === 'wait') { S.queue = S.queue.filter(function (q) { return q.id !== e.id; }); LS.set('gtp_queue', S.queue); S.today = S.today.filter(function (x) { return x.id !== e.id; }); saveToday(); renderToday(); renderPending(); return; }
+    if (e.status === 'wait' || e.status === 'error') { S.queue = S.queue.filter(function (q) { return q.id !== e.id; }); LS.set('gtp_queue', S.queue); S.today = S.today.filter(function (x) { return x.id !== e.id; }); saveToday(); renderToday(); renderPending(); return; }
     api('cancel', { id: e.id, meta: { user: S.user, device: S.device } }).then(function () { e.status = 'cancel'; saveToday(); renderToday(); toast(t('cancelled'), 'ok'); })
       .catch(function (err) { toast(t('cancelFailed') + (err && err.message ? '：' + err.message : ''), 'bad'); });
   }
   function refreshRecent() {
     if (!apiReady()) return Promise.resolve();
-    return api('recent', { days: 1 }).then(function (j) {
+    return api('recent', { days: RECENT_DAYS }).then(function (j) {
       var mine = {}; S.today.forEach(function (e) { mine[e.id] = e; });
       (j.entries || []).forEach(function (r) {
         var st = r.status === '取消' ? 'cancel' : 'ok';
@@ -422,9 +435,50 @@
       saveToday(); renderToday();
     }).catch(function () { });
   }
+  // 一覧は直近3日分（登録日時で判断）。同じ拠点なら他の端末で入れた分も出て、取消・数量を直すができる（期限なし）
+  var RECENT_DAYS = 3;
+  function daysAgoStr(n) { var d = new Date(); d.setDate(d.getDate() - n); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function parseQty(v) { var s = String(v == null ? '' : v).normalize('NFKC').replace(/,/g, '').trim(); var n = Number(s); return s && isFinite(n) && n > 0 ? n : null; }
+  function openFix(e, d) {
+    if (d.querySelector('.fixbox')) return;
+    var fb = document.createElement('div'); fb.className = 'fixbox';
+    fb.innerHTML = '<input type="text" inputmode="decimal" autocomplete="off"><span class="u">' + esc(unitLabel(e.unit)) + '</span><button type="button" class="fx-save"></button><button type="button" class="fx-close"></button>';
+    var inp = fb.querySelector('input'); inp.value = fmtQty(e.qty);
+    fb.querySelector('.fx-save').textContent = t('fixSave'); fb.querySelector('.fx-close').textContent = t('fixClose');
+    fb.querySelector('.fx-close').onclick = function () { fb.remove(); };
+    fb.querySelector('.fx-save').onclick = function () { saveFix(e, inp.value, fb); };
+    inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') saveFix(e, inp.value, fb); });
+    d.appendChild(fb); setTimeout(function () { inp.focus(); inp.select(); }, 30);
+  }
+  function saveFix(e, raw, fb) {
+    var q = parseQty(raw); if (q === null) { toast(t('qtyInvalid'), 'bad'); return; }
+    if (q === Number(e.qty)) { fb.remove(); return; }
+    var old = e.qty;
+    if (e.status === 'wait') {   // まだ送っていない登録は、送信待ちの中身を直すだけ
+      e.qty = q; S.queue.forEach(function (x) { if (x.id === e.id) x.qty = q; }); LS.set('gtp_queue', S.queue); saveToday(); renderToday();
+      toast(t('qtyFixed', { from: fmtQty(old), to: fmtQty(q) }), 'ok'); return;
+    }
+    if (!CFG.mock && (!navigator.onLine || !apiReady())) { toast(t('needOnlineFix'), 'bad'); return; }
+    var btn = fb.querySelector('.fx-save'); btn.disabled = true;
+    api('fix', { id: e.id, qty: q, newId: uid('E'), meta: { user: S.user, device: S.device } }).then(function (j) {
+      e.status = 'cancel';
+      if (j.entry) {
+        var r = j.entry, it = S.itemByCode && S.itemByCode[r.itemCode], sp = S.supByCode && S.supByCode[r.supCode];
+        S.today.push({ id: r.id, createdAt: r.createdAt, date: r.date, supCode: r.supCode, supName: r.supName, supEn: sp ? sp.en : '', itemCode: r.itemCode, itemName: r.itemName, itemEn: it ? it.en : '', unit: r.unit, priced: r.price != null, price: r.price == null ? null : r.price, qty: r.qty, note: r.note, user: r.user, status: 'ok' });
+      }
+      S.today.sort(function (a, b) { return a.createdAt < b.createdAt ? 1 : -1; });
+      saveToday(); renderToday();
+      toast(t('qtyFixed', { from: fmtQty(old), to: fmtQty(q) }), 'ok');
+      if (j.dup) refreshRecent();
+    }).catch(function (err) {
+      btn.disabled = false;
+      if (err && err.code === 'network') toast(t('needOnlineFix'), 'bad');
+      else toast((err && err.message) || t('netError'), 'bad');
+    });
+  }
   function renderToday() {
-    var td = todayStr();
-    S.today = S.today.filter(function (e) { return e.createdAt.slice(0, 10) === td; });
+    var td = todayStr(), from = daysAgoStr(RECENT_DAYS - 1);
+    S.today = S.today.filter(function (e) { return e.createdAt.slice(0, 10) >= from && String(e.id).indexOf('MIG-') !== 0; });
     var box = $('todayList'); box.innerHTML = '';
     $('todayCount').textContent = S.today.filter(function (e) { return e.status !== 'cancel'; }).length;
     if (!S.today.length) { box.innerHTML = '<div class="empty">—</div>'; return; }
@@ -432,9 +486,17 @@
       var d = document.createElement('div'); d.className = 'entry' + (e.status === 'cancel' ? ' cancelled' : '');
       var itName = S.lang === 'en' && e.itemEn ? e.itemEn : e.itemName, spName = S.lang === 'en' && e.supEn ? e.supEn : e.supName;
       var st = e.status === 'ok' ? '<span class="st ok">' + esc(t('sent')) + '</span>' : e.status === 'wait' ? '<span class="st wait">' + esc(t('waiting')) + '</span>' : e.status === 'cancel' ? '<span class="st cancel">' + esc(t('cancelled')) + '</span>' : '<span class="st wait" title="' + esc(e.error) + '">' + esc(t('errorLabel')) + '</span>';
-      d.innerHTML = '<span class="t">' + esc(e.createdAt.slice(11, 16)) + '</span><div class="body"><b>' + esc(spName) + '</b><small>' + esc(itName) + (e.date !== td ? ' · ' + esc(e.date) : '') + (e.user ? ' · ' + esc(e.user) : '') + (e.error ? ' · ' + esc(e.error) : '') + '</small></div>' +
-        '<span class="q">' + esc(fmtQty(e.qty)) + '<small> ' + esc(unitLabel(e.unit)) + '</small>' + (e.price != null ? '<em>' + esc(fmtYen(e.qty * e.price)) + '</em>' : '') + '</span>' + st;
-      if (e.status !== 'cancel' && !e.remote) { var x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.textContent = t('cancel'); x.onclick = function () { cancelEntry(e); }; d.appendChild(x); }
+      var day = e.createdAt.slice(0, 10), when = (day === td ? '' : '<i>' + Number(day.slice(5, 7)) + '/' + Number(day.slice(8, 10)) + '</i>') + esc(e.createdAt.slice(11, 16));
+      d.innerHTML = '<div class="line"><span class="t">' + when + '</span><div class="body"><b>' + esc(spName) + '</b><small>' + esc(itName) + (e.date !== td ? ' · ' + esc(e.date) : '') + (e.user ? ' · ' + esc(e.user) : '') + (e.error ? ' · ' + esc(e.error) : '') + '</small></div>' +
+        '<span class="q">' + esc(fmtQty(e.qty)) + '<small> ' + esc(unitLabel(e.unit)) + '</small>' + (e.price != null ? '<em>' + esc(fmtYen(e.qty * e.price)) + '</em>' : '') + '</span>' + st + '</div>';
+      if (e.status !== 'cancel') {
+        var acts = document.createElement('div'); acts.className = 'acts';
+        if (e.status === 'wait' || (e.status === 'ok' && hasFeature('fix'))) {
+          var fx = document.createElement('button'); fx.type = 'button'; fx.className = 'fx'; fx.textContent = t('fixQty'); fx.onclick = function () { openFix(e, d); }; acts.appendChild(fx);
+        }
+        var x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.textContent = t('cancel'); x.onclick = function () { cancelEntry(e); }; acts.appendChild(x);
+        d.appendChild(acts);
+      }
       box.appendChild(d);
     });
   }
