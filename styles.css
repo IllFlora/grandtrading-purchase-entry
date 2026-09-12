@@ -120,3 +120,13 @@ main{padding:12px;max-width:720px;margin:0 auto}
 .add-row{display:block;width:100%;margin-top:10px;border:1.5px dashed var(--blue);background:#f3f8fc;color:var(--blue);border-radius:12px;padding:13px 12px;font-size:16px;font-weight:800;text-align:left;cursor:pointer;min-height:52px;overflow-wrap:anywhere}
 .add-row:active{background:#e1eef8}
 .add-row:disabled{opacity:.55}
+/* 商品の追加フォーム（2026-09-13） */
+.add-form{margin-top:10px;border:1.5px solid var(--blue);background:#f7fbfe;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.add-form b{font-size:16px;color:var(--navy)}
+.add-form label{font-size:13px;font-weight:800;color:var(--muted);margin-top:6px}
+.add-form input,.add-form select{width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:17px;background:#fff;color:var(--ink);font-family:inherit}
+.add-form small{color:var(--muted);font-size:12.5px;line-height:1.5;margin-top:4px}
+.add-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.add-actions{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:8px}
+.add-actions .primary{padding:12px;font-size:17px}
+.price-line .pill.warn{color:var(--amber);background:var(--amberbg)}

@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="仕入れ入力">
 <title>Grand Trading 仕入れ入力</title>
-<link rel="stylesheet" href="styles.css?v=20260913-1">
+<link rel="stylesheet" href="styles.css?v=20260913-2">
 </head>
 <body>
 
@@ -79,6 +79,19 @@
         <input id="itemSearch" class="search" type="search" autocomplete="off" data-i18n-placeholder="searchPlaceholder" placeholder="コードまたは名前で検索">
         <div id="itemFrequent" class="chips"></div>
         <div id="itemList" class="list"></div>
+        <button id="itemAdd" class="add-row hidden" type="button"></button>
+        <div id="itemAddForm" class="add-form hidden">
+          <b data-i18n="newItemTitle">新しい商品を追加</b>
+          <label for="newItemName" data-i18n="itemNameLabel">商品名</label>
+          <input id="newItemName" maxlength="60" autocomplete="off">
+          <div class="add-grid">
+            <div><label for="newItemUnit" data-i18n="unitWord">単位</label><select id="newItemUnit"></select></div>
+            <div><label for="newItemPrice" data-i18n="priceYen">単価（円）</label><input id="newItemPrice" inputmode="decimal" autocomplete="off" placeholder="50"></div>
+          </div>
+          <small data-i18n="priceHint">単価がわからなければ空欄でOK。入れた単価は事務所が月末に確認します</small>
+          <div class="add-actions"><button id="newItemCancel" class="ghost" type="button" data-i18n="cancelAdd">やめる</button><button id="newItemSubmit" class="primary" type="button" data-i18n="addItemSubmit">追加する</button></div>
+          <div id="newItemError" class="error"></div>
+        </div>
       </div>
     </section>
 
@@ -123,7 +136,7 @@
   </div>
 </div>
 
-<script src="config.js?v=20260913-1"></script>
-<script src="app.js?v=20260913-1"></script>
+<script src="config.js?v=20260913-2"></script>
+<script src="app.js?v=20260913-2"></script>
 </body>
 </html>

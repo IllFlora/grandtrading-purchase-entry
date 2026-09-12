@@ -16,5 +16,5 @@ window.GT_PURCHASE_CONFIG = {
   },
   sites: ['長野', '千葉'],
   mock: false,
-  version: '2026-09-13.1'
+  version: '2026-09-13.2'
 };

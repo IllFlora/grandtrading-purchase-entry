@@ -34,7 +34,11 @@
       unitPrice: '単価', amount: '金額', supplierPrice: '取引先別単価',
       addSupplier: '＋「{name}」を新しい取引先として追加', confirmAddSup: '「{name}」を取引先に追加します。\n会社名・店名にまちがいはありませんか？',
       supAdded: '取引先を追加しました：{code} {name}', supExists: 'すでに登録されていました：{code} {name}',
-      needOnline: '取引先の追加は、電波のあるところでしてください', featureNotReady: 'この機能はまだ使えません。管理者に連絡してください'
+      needOnline: '追加は、電波のあるところでしてください', featureNotReady: 'この機能はまだ使えません。管理者に連絡してください',
+      addItem: '＋「{name}」を新しい商品として追加', newItemTitle: '新しい商品を追加', itemNameLabel: '商品名', unitWord: '単位',
+      priceYen: '単価（円）', priceHint: '単価がわからなければ空欄でOK。入れた単価は事務所が月末に確認します',
+      addItemSubmit: '追加する', cancelAdd: 'やめる', itemAdded: '商品を追加しました：{code} {name}', itemExists: 'すでに登録されていました：{code} {name}',
+      nameRequired: '商品名を入れてください', priceInvalid: '単価は数字で入れてください', pendingPrice: '現場入力の単価'
     },
     en: {
       appTitle: 'Purchase Entry', setupLead: 'Which site are you at? (first time only)', site: 'Site', userName: 'Your name (optional)',
@@ -53,7 +57,11 @@
       unitPrice: 'Unit price', amount: 'Amount', supplierPrice: 'supplier price',
       addSupplier: '+ Add "{name}" as a new supplier', confirmAddSup: 'Add "{name}" as a supplier?\nPlease check the company or shop name is correct.',
       supAdded: 'Supplier added: {code} {name}', supExists: 'Already registered: {code} {name}',
-      needOnline: 'You need a connection to add a supplier. Try again where you have signal.', featureNotReady: 'This is not available yet. Please contact the administrator.'
+      needOnline: 'You need a connection to add this. Try again where you have signal.', featureNotReady: 'This is not available yet. Please contact the administrator.',
+      addItem: '+ Add "{name}" as a new item', newItemTitle: 'Add a new item', itemNameLabel: 'Item name', unitWord: 'Unit',
+      priceYen: 'Unit price (yen)', priceHint: 'Leave the price blank if you do not know it. The office checks any price you enter at month end.',
+      addItemSubmit: 'Add', cancelAdd: 'Cancel', itemAdded: 'Item added: {code} {name}', itemExists: 'Already registered: {code} {name}',
+      nameRequired: 'Enter the item name', priceInvalid: 'Enter the price as a number', pendingPrice: 'price set on site'
     }
   };
   var UNIT_EN = { 'kg': 'kg', '個': 'pcs', '本': 'pcs', '枚': 'pcs', '台': 'units', '箱': 'boxes', '式': 'lot', '一式': 'lot', '袋': 'bags', '円': 'yen' };
@@ -101,7 +109,7 @@
     var timer = ctl && setTimeout(function () { ctl.abort(); }, opts.timeout || 25000);
     var base = { action: action, site: S.site, pin: pinFor(S.site) };
     var req;
-    if (action === 'add' || action === 'cancel' || action === 'addSupplier') {
+    if (action === 'add' || action === 'cancel' || action === 'addSupplier' || action === 'addItem') {
       Object.keys(base).forEach(function (k) { body[k] = base[k]; });
       req = fetch(url, { method: 'POST', body: JSON.stringify(body), signal: ctl && ctl.signal, redirect: 'follow' });
     } else {
@@ -126,7 +134,16 @@
       var m = window.GT_MOCK_MASTERS && window.GT_MOCK_MASTERS[S.site];
       if (!m) throw { code: 'bad_site', message: 'mock: site not found' };
       var log = LS.get('gtp_mock_log', []);
-      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], price: r[3] === '' || r[3] == null ? null : Number(r[3]), priced: r[3] !== '' && r[3] !== null }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), prices: m.prices || {}, pricePairs: Object.keys(m.prices || {}), features: ['addSupplier'], cancelHours: 24 };
+      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], price: r[3] === '' || r[3] == null ? null : Number(r[3]), priced: r[3] !== '' && r[3] !== null, pending: String(r[5] || '').indexOf('単価要確認') >= 0 }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), prices: m.prices || {}, pricePairs: Object.keys(m.prices || {}), features: ['addSupplier', 'addItem'], cancelHours: 24 };
+      if (action === 'addItem') {
+        var inm = String(body.name || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
+        var same2 = m.items.filter(function (r) { return normName(r[1]) === normName(inm); })[0];
+        if (same2) return { ok: true, dup: true, item: { code: same2[0], name: same2[1], en: same2[2], unit: same2[4], price: same2[3] === '' ? null : same2[3], priced: same2[3] !== '' } };
+        var icode = m.items.reduce(function (a, r) { return Math.max(a, Number(r[0]) || 0); }, 0) + 1;
+        var ip = body.price === '' || body.price == null ? '' : Number(body.price);
+        m.items.push([icode, inm, '', ip, body.unit || 'kg', ip === '' ? 'アプリから追加（モック）' : '【単価要確認】アプリから追加（モック）']);
+        return { ok: true, created: true, item: { code: icode, name: inm, en: '', unit: body.unit || 'kg', price: ip === '' ? null : ip, priced: ip !== '', pending: ip !== '' } };
+      }
       if (action === 'addSupplier') {
         var nm = String(body.name || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
         if (!nm) throw { code: 'bad_name', message: 'mock: name required' };
@@ -202,7 +219,7 @@
     if (!item) return null;
     var map = (S.masters && S.masters.prices) || {};
     if (S.sup && map[S.sup.code + '|' + item.code] != null) return { price: Number(map[S.sup.code + '|' + item.code]), kind: 'sup' };
-    if (item.price != null && item.price !== '') return { price: Number(item.price), kind: 'master' };
+    if (item.price != null && item.price !== '') return { price: Number(item.price), kind: item.pending ? 'pending' : 'master' };
     return null;
   }
   function isPriced(item) {
@@ -218,7 +235,8 @@
     if (!S.item || !p) { line.classList.add('hidden'); return; }
     line.classList.remove('hidden');
     $('priceValue').textContent = fmtYen(p.price) + (S.item.unit ? '/' + unitLabel(S.item.unit) : '');
-    var k = $('priceKind'); k.textContent = p.kind === 'sup' ? t('supplierPrice') : ''; k.classList.toggle('hidden', p.kind !== 'sup');
+    var k = $('priceKind'); k.textContent = p.kind === 'sup' ? t('supplierPrice') : p.kind === 'pending' ? t('pendingPrice') : '';
+    k.classList.toggle('hidden', p.kind === 'master'); k.classList.toggle('warn', p.kind === 'pending');
     var q = qtyValue(); $('amountValue').textContent = q === null ? '—' : fmtYen(q * p.price);
   }
   function renderPicker(kind) {
@@ -234,7 +252,7 @@
     });
     var box = $(kind + 'List'); box.innerHTML = '';
     var hits = list.filter(function (o) { return matches(q, o); });
-    if (kind === 'sup') renderAddSupplier(q, list);
+    if (kind === 'sup') renderAddSupplier(q, list); else renderAddItem(q, list);
     if (!hits.length) { box.innerHTML = '<div class="empty">' + esc(t('noMatch')) + '</div>'; return; }
     var frag = document.createDocumentFragment();
     hits.forEach(function (o) {
@@ -277,6 +295,45 @@
       else toast((err && err.message) || t('netError'), 'bad');
     }).then(function () { btn.disabled = false; });
   }
+  var UNIT_CHOICES = ['kg', '個', '本', '枚', '台', '箱', '袋', '一式'];
+  function renderAddItem(q, list) {
+    var btn = $('itemAdd'); if (!btn) return;
+    var show = hasFeature('addItem') && normName(q).length >= 2 && !/^[0-9]+$/.test(normName(q)) &&
+      !list.some(function (o) { return normName(o.name) === normName(q); }) && $('itemAddForm').classList.contains('hidden');
+    btn.classList.toggle('hidden', !show);
+    if (show) { btn.textContent = t('addItem', { name: q }); btn.dataset.name = q; }
+  }
+  function openItemForm() {
+    var sel = $('newItemUnit'); sel.innerHTML = '';
+    UNIT_CHOICES.forEach(function (u) { var o = document.createElement('option'); o.value = u; o.textContent = unitLabel(u); sel.appendChild(o); });
+    $('newItemName').value = $('itemAdd').dataset.name || ''; $('newItemPrice').value = ''; $('newItemError').textContent = '';
+    $('itemAdd').classList.add('hidden'); $('itemAddForm').classList.remove('hidden');
+    setTimeout(function () { $('newItemPrice').focus(); }, 50);
+  }
+  function closeItemForm() { $('itemAddForm').classList.add('hidden'); renderPicker('item'); }
+  function submitItem() {
+    var name = $('newItemName').value.trim(), unit = $('newItemUnit').value;
+    var raw = $('newItemPrice').value.normalize('NFKC').replace(/[,円\s]/g, '');
+    if (!name) { $('newItemError').textContent = t('nameRequired'); return; }
+    if (raw !== '' && !(isFinite(Number(raw)) && Number(raw) >= 0)) { $('newItemError').textContent = t('priceInvalid'); return; }
+    if (!CFG.mock && (!navigator.onLine || !apiReady())) { $('newItemError').textContent = t('needOnline'); return; }
+    var btn = $('newItemSubmit'); btn.disabled = true; $('newItemError').textContent = '';
+    api('addItem', { name: name, unit: unit, price: raw, meta: { user: S.user, device: S.device } }).then(function (j) {
+      var it = j.item;
+      if (!S.masters.items.some(function (o) { return o.code === it.code; })) S.masters.items.push(it);
+      S.masters.items.sort(function (a, b) { return a.code - b.code; });
+      LS.set(mastersKey(), S.masters);
+      $('itemAddForm').classList.add('hidden'); $('itemSearch').value = '';
+      useMasters(S.masters);
+      select('item', S.itemByCode[it.code]);
+      bumpFreq('item', it.code);
+      toast(t(j.created ? 'itemAdded' : 'itemExists', { code: it.code, name: it.name }), 'ok');
+    }).catch(function (err) {
+      if (err && err.code === 'network') $('newItemError').textContent = t('needOnline');
+      else if (err && /unknown/.test(err.message || err.code || '')) $('newItemError').textContent = t('featureNotReady');
+      else $('newItemError').textContent = (err && err.message) || t('netError');
+    }).then(function () { btn.disabled = false; });
+  }
   function select(kind, o) {
     if (kind === 'sup') S.sup = o; else S.item = o;
     if (kind === 'sup') renderPicker('item');   // 取引先が変わると「?」（単価未設定）の表示も変わる
@@ -297,7 +354,7 @@
     $('unpricedHint').classList.toggle('hidden', !(S.item && !isPriced(S.item)));
     updateSaveBtn();
   }
-  function change(kind) { if (kind === 'sup') S.sup = null; else S.item = null; renderSelected(); $(kind + 'Search').value = ''; renderPicker(kind); setTimeout(function () { $(kind + 'Search').focus(); }, 50); }
+  function change(kind) { if (kind === 'sup') S.sup = null; else { S.item = null; $('itemAddForm').classList.add('hidden'); } renderSelected(); $(kind + 'Search').value = ''; renderPicker(kind); setTimeout(function () { $(kind + 'Search').focus(); }, 50); }
   function qtyValue() { var v = $('qtyInput').value.replace(/[０-９．]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/,/g, '').trim(); var n = Number(v); return v && isFinite(n) && n > 0 ? n : null; }
   function updateSaveBtn() { $('saveBtn').disabled = !(S.sup && S.item && qtyValue() !== null && $('dateInput').value); updateAmount(); }
 
@@ -434,7 +491,9 @@
     $('dateInput').onchange = updateSaveBtn;
     $('supSearch').oninput = function () { renderPicker('sup'); }; $('itemSearch').oninput = function () { renderPicker('item'); };
     $('supChange').onclick = function () { change('sup'); };
-    $('supAdd').onclick = addSupplier; $('itemChange').onclick = function () { change('item'); };
+    $('supAdd').onclick = addSupplier;
+    $('itemAdd').onclick = openItemForm; $('newItemCancel').onclick = closeItemForm; $('newItemSubmit').onclick = submitItem;
+    $('newItemPrice').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitItem(); }); $('itemChange').onclick = function () { change('item'); };
     $('qtyInput').oninput = updateSaveBtn;
     $('qtyInput').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !$('saveBtn').disabled) save(); });
     $('saveBtn').onclick = save;
