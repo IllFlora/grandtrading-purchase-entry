@@ -5,12 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#102a43">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="仕入れ入力">
+<meta name="format-detection" content="telephone=no">
 <title>Grand Trading 仕入れ入力</title>
-<link rel="stylesheet" href="styles.css?v=20260913-3">
+<link rel="stylesheet" href="styles.css?v=20260913-4">
 </head>
 <body>
+<noscript><p style="padding:24px;font-size:18px">このアプリは JavaScript を使います。ブラウザの設定で JavaScript をオンにしてください。</p></noscript>
 
 <!-- 初期設定（拠点・PIN・言語） -->
 <section id="setup" class="setup hidden">
@@ -18,7 +21,7 @@
     <div class="brand-mark">GT</div>
     <p class="eyebrow">GRAND TRADING</p>
     <h1 data-i18n="appTitle">仕入れ入力</h1>
-    <p class="muted" data-i18n="setupLead">拠点とPINを設定してください（初回のみ）</p>
+    <p class="muted" data-i18n="setupLead">どこの拠点ですか？（初回だけ）</p>
     <div class="lang-row">
       <button type="button" class="lang" data-lang="ja">日本語</button>
       <button type="button" class="lang" data-lang="en">English</button>
@@ -88,7 +91,7 @@
             <div><label for="newItemUnit" data-i18n="unitWord">単位</label><select id="newItemUnit"></select></div>
             <div><label for="newItemPrice" data-i18n="priceYen">単価（円）</label><input id="newItemPrice" inputmode="decimal" autocomplete="off" placeholder="50"></div>
           </div>
-          <small data-i18n="priceHint">単価がわからなければ空欄でOK。入れた単価は事務所が月末に確認します</small>
+          <small data-i18n="priceHint">単価がわからなければ空欄でOK。入れた単価は経理が月末に確認します</small>
           <div class="add-actions"><button id="newItemCancel" class="ghost" type="button" data-i18n="cancelAdd">やめる</button><button id="newItemSubmit" class="primary" type="button" data-i18n="addItemSubmit">追加する</button></div>
           <div id="newItemError" class="error"></div>
         </div>
@@ -103,7 +106,7 @@
       </div>
       <input id="noteInput" class="note" maxlength="60" autocomplete="off" data-i18n-placeholder="notePlaceholder" placeholder="メモ（任意）">
       <div id="priceLine" class="price-line hidden"><span data-i18n="unitPrice">単価</span> <b id="priceValue"></b><span id="priceKind" class="pill hidden"></span><span class="sep"></span><span data-i18n="amount">金額</span> <b id="amountValue">—</b></div>
-      <div id="unpricedHint" class="hint hidden" data-i18n="unpricedHint">この商品は単価が都度決めです。数量だけ登録し、金額は管理者がシートで入れます。</div>
+      <div id="unpricedHint" class="hint hidden" data-i18n="unpricedHint">この商品は単価が都度決めです。数量だけ登録し、金額は経理がシートで入れます。</div>
       <button id="saveBtn" class="primary big" type="button" disabled data-i18n="save">登録する</button>
       <div id="saveError" class="error"></div>
     </section>
@@ -131,12 +134,20 @@
         <dt>API</dt><dd id="dApi"></dd>
         <dt data-i18n="version">版</dt><dd id="dVersion"></dd>
       </dl>
-      <button id="dResetSite" class="ghost" type="button" data-i18n="changeSite">拠点・PINを設定し直す</button>
+      <button id="dResetSite" class="ghost" type="button" data-i18n="changeSite">拠点を選び直す</button>
     </section>
   </div>
 </div>
 
-<script src="config.js?v=20260913-3"></script>
-<script src="app.js?v=20260913-3"></script>
+<!-- 確認（window.confirm の代わり） -->
+<div id="confirmBox" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <p id="confirmText"></p>
+    <div class="modal-actions"><button id="confirmNo" class="ghost" type="button">キャンセル</button><button id="confirmYes" class="primary" type="button">OK</button></div>
+  </div>
+</div>
+
+<script src="config.js?v=20260913-4"></script>
+<script src="app.js?v=20260913-4"></script>
 </body>
 </html>

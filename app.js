@@ -39,7 +39,10 @@
       priceYen: '単価（円）', priceHint: '単価がわからなければ空欄でOK。入れた単価は経理が月末に確認します',
       addItemSubmit: '追加する', cancelAdd: 'やめる', itemAdded: '商品を追加しました：{code} {name}', itemExists: 'すでに登録されていました：{code} {name}',
       nameRequired: '商品名を入れてください', priceInvalid: '単価は数字で入れてください', pendingPrice: '現場入力の単価',
-      fixQty: '数量を直す', fixSave: '直す', fixClose: 'やめる', qtyFixed: '数量を直しました：{from} → {to}', needOnlineFix: '数量を直すのは、電波のあるところでしてください'
+      fixQty: '数量を直す', fixSave: '直す', fixClose: 'やめる', qtyFixed: '数量を直しました：{from} → {to}', needOnlineFix: '数量を直すのは、電波のあるところでしてください',
+      mastersLoading: '取引先・商品を読み込んでいます…', mastersSlow: '朝いちばんは30秒ほどかかることがあります。そのまま待ってください',
+      mastersFailed: '読み込めませんでした。電波を確認して、もう一度押してください', tryAgain: 'もう一度読み込む',
+      ok: 'OK', no: 'キャンセル'
     },
     en: {
       appTitle: 'Purchase Entry', setupLead: 'Which site are you at? (first time only)', site: 'Site', userName: 'Your name (optional)',
@@ -63,7 +66,10 @@
       priceYen: 'Unit price (yen)', priceHint: 'Leave the price blank if you do not know it. The office checks any price you enter at month end.',
       addItemSubmit: 'Add', cancelAdd: 'Cancel', itemAdded: 'Item added: {code} {name}', itemExists: 'Already registered: {code} {name}',
       nameRequired: 'Enter the item name', priceInvalid: 'Enter the price as a number', pendingPrice: 'price set on site',
-      fixQty: 'Fix qty', fixSave: 'Save', fixClose: 'Close', qtyFixed: 'Quantity fixed: {from} → {to}', needOnlineFix: 'You need a connection to fix an entry.'
+      fixQty: 'Fix qty', fixSave: 'Save', fixClose: 'Close', qtyFixed: 'Quantity fixed: {from} → {to}', needOnlineFix: 'You need a connection to fix an entry.',
+      mastersLoading: 'Loading suppliers and items…', mastersSlow: 'The first load of the day can take about 30 seconds. Please wait.',
+      mastersFailed: 'Could not load. Check your connection and tap the button again.', tryAgain: 'Load again',
+      ok: 'OK', no: 'Cancel'
     }
   };
   var UNIT_EN = { 'kg': 'kg', '個': 'pcs', '本': 'pcs', '枚': 'pcs', '台': 'units', '箱': 'boxes', '式': 'lot', '一式': 'lot', '袋': 'bags', '円': 'yen' };
@@ -94,7 +100,7 @@
     $('siteLabel').textContent = siteLabel(S.site);
     document.title = 'Grand Trading ' + t('appTitle');
   }
-  function setLang(l) { S.lang = l; LS.set('gtp_lang', l); applyI18n(); if (S.masters) { renderPicker('sup'); renderPicker('item'); renderSelected(); renderToday(); } }
+  function setLang(l) { S.lang = l; LS.set('gtp_lang', l); applyI18n(); if (S.masters) { renderPicker('sup'); renderPicker('item'); renderSelected(); renderToday(); } else if (!$('app').classList.contains('hidden')) { renderMastersState(); renderToday(); } }
 
   // ─── 通信 ───
   function apiUrlFor(site) { return (CFG.apiUrls && CFG.apiUrls[site]) || CFG.apiUrl || ''; }
@@ -102,18 +108,38 @@
   function pinFor(site) { return (CFG.pins && CFG.pins[site]) || CFG.pin || S.pin || ''; }
   function apiReady() { return !!(CFG.mock || apiUrlFor(S.site)); }
   function setNet(state) { S.netOk = state; var d = $('netDot'); d.className = 'dot ' + (state === true ? 'ok' : state === false ? 'bad' : navigator.onLine ? 'busy' : 'bad'); }
+  // Apps Script は朝いちばんなど久しぶりの呼び出しで30秒前後かかることがあり、Google 側が一時的に 404 のHTMLを返すこともある（2026-09-13 実測）。
+  // そのため待ち時間は長めにし、読み込み（masters / recent）は自動で2回までやり直す。
+  // 書き込みは「Googleの一時エラー」のときだけ1回やり直す（サーバーはID・名前で二重登録を防ぐので、やり直しても増えない）。
+  var POST_ACTIONS = ['add', 'cancel', 'fix', 'addSupplier', 'addItem'];
   function api(action, body, opts) {
     body = body || {}; opts = opts || {};
     if (CFG.mock) return mockApi(action, body).then(function (j) { setNet(true); return j; });
     var url = apiUrlFor(S.site);
     if (!url) return Promise.reject({ code: 'no_api', message: t('apiNotSet') });
+    var isPost = POST_ACTIONS.indexOf(action) >= 0, site = S.site;
+    var retries = opts.retries != null ? opts.retries : (isPost ? 1 : 2);
+    var attempt = function (left) {
+      return apiOnce(url, action, body, isPost, site, opts.timeout || 60000).catch(function (err) {
+        var retryable = err && (err.code === 'bad_response' || (!isPost && err.code === 'network'));
+        if (!retryable || left <= 0 || navigator.onLine === false) throw err;
+        return new Promise(function (res) { setTimeout(res, (retries - left + 1) * 1500); }).then(function () { return attempt(left - 1); });
+      });
+    };
+    return attempt(retries).catch(function (err) {
+      if (err && err.code && err.code !== 'bad_response' && err.code !== 'network') throw err;   // サーバーが返した業務エラー
+      setNet(false); throw { code: 'network', message: t('netError') };
+    });
+  }
+  function apiOnce(url, action, body, isPost, site, timeout) {
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    var timer = ctl && setTimeout(function () { ctl.abort(); }, opts.timeout || 25000);
-    var base = { action: action, site: S.site, pin: pinFor(S.site) };
+    var timer = ctl && setTimeout(function () { ctl.abort(); }, timeout);
+    var base = { action: action, site: site, pin: pinFor(site) };
     var req;
-    if (action === 'add' || action === 'cancel' || action === 'fix' || action === 'addSupplier' || action === 'addItem') {
-      Object.keys(base).forEach(function (k) { body[k] = base[k]; });
-      req = fetch(url, { method: 'POST', body: JSON.stringify(body), signal: ctl && ctl.signal, redirect: 'follow' });
+    if (isPost) {
+      var payload = {}; Object.keys(body).forEach(function (k) { payload[k] = body[k]; });
+      Object.keys(base).forEach(function (k) { payload[k] = base[k]; });
+      req = fetch(url, { method: 'POST', body: JSON.stringify(payload), signal: ctl && ctl.signal, redirect: 'follow' });
     } else {
       var q = Object.keys(base).map(function (k) { return k + '=' + encodeURIComponent(base[k]); });
       Object.keys(body).forEach(function (k) { q.push(k + '=' + encodeURIComponent(body[k])); });
@@ -121,13 +147,13 @@
     }
     return req.then(function (r) { return r.text(); }).then(function (txt) {
       if (timer) clearTimeout(timer);
-      var j; try { j = JSON.parse(txt); } catch (e) { throw { code: 'bad_response', message: 'サーバー応答が不正: ' + txt.slice(0, 80) }; }
-      if (!j.ok) throw { code: j.code || 'error', message: j.error || 'error' };
+      var j; try { j = JSON.parse(txt); } catch (e) { throw { code: 'bad_response', message: 'bad response: ' + String(txt).slice(0, 80) }; }
+      if (!j || !j.ok) throw { code: (j && j.code) || 'error', message: (j && j.error) || 'error' };
       setNet(true); return j;
     }).catch(function (err) {
       if (timer) clearTimeout(timer);
-      if (err && err.code && err.code !== 'bad_response') throw err;   // サーバーが返した業務エラー
-      setNet(false); throw { code: 'network', message: t('netError') };
+      if (err && err.code) throw err;
+      throw { code: 'network', message: t('netError') };   // 通信断・タイムアウト
     });
   }
   // モック: config.mock=true のとき。API を叩かず端末内で完結（画面確認用）
@@ -192,24 +218,46 @@
 
   // ─── マスター ───
   function mastersKey() { return 'gtp_masters_' + S.site; }
+  function validMasters(m) { return !!(m && Array.isArray(m.items) && Array.isArray(m.suppliers)); }
   function useMasters(m) {
-    S.masters = m;
+    S.masters = m; S.mastersState = 'ok';
     var it = {}, sp = {};
     m.items.forEach(function (i) { it[i.code] = i; }); m.suppliers.forEach(function (s) { sp[s.code] = s; });
     S.itemByCode = it; S.supByCode = sp;
     renderPicker('sup'); renderPicker('item'); renderSelected(); renderToday();
-    $('dMasters').textContent = m.fetchedAt ? t('mastersAt', { t: m.fetchedAt.replace('T', ' ').slice(5, 16) }) : t('mastersNone');
+    $('dMasters').textContent = m.fetchedAt ? t('mastersAt', { t: String(m.fetchedAt).replace('T', ' ').slice(5, 16) }) : t('mastersNone');
   }
   function loadMasters(force) {
     var cached = LS.get(mastersKey(), null);
+    if (!validMasters(cached)) cached = null;   // 壊れた保存値では起動を止めない
     if (cached && !force) useMasters(cached);
     if (!apiReady() && cached) return Promise.resolve(cached);
+    var site = S.site;
+    if (!S.masters) { S.mastersState = 'loading'; renderMastersState(); }
     return api('masters').then(function (j) {
-      var m = { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, prices: j.prices || {}, pricePairs: j.pricePairs || [], features: j.features || [], cancelHours: j.cancelHours || 24 };
+      if (site !== S.site) return S.masters;   // 読み込み中に拠点を変えた
+      var m = { fetchedAt: nowIso(), items: j.items || [], suppliers: j.suppliers || [], prices: j.prices || {}, pricePairs: j.pricePairs || [], features: j.features || [], cancelHours: j.cancelHours || 0 };
       LS.set(mastersKey(), m); useMasters(m); return m;
     }).catch(function (err) {
       if (cached) return cached;
+      if (site === S.site && !S.masters) { S.mastersState = 'error'; S.mastersError = err; renderMastersState(); }
       throw err;
+    });
+  }
+  // マスター未取得のあいだ、取引先・商品の一覧に「読み込み中」「読み込めなかった＋もう一度」を出す（空の一覧のまま止まって見えないように）
+  function renderMastersState() {
+    if (S.masters) return;
+    ['sup', 'item'].forEach(function (kind) {
+      $(kind + 'Frequent').innerHTML = ''; $(kind + 'Add').classList.add('hidden');
+      var box = $(kind + 'List');
+      if (S.mastersState === 'error') {
+        var err = S.mastersError || {};
+        var msg = err.code === 'network' ? t('mastersFailed') : err.code === 'bad_pin' || err.code === 'no_pin' || err.code === 'wrong_sheet' ? t('badPin') : (err.message || t('mastersFailed'));
+        box.innerHTML = '<div class="empty state"><b>' + esc(msg) + '</b><button type="button" class="ghost retry-masters">' + esc(t('tryAgain')) + '</button></div>';
+        box.querySelector('.retry-masters').onclick = function () { loadMasters(true).then(function () { flush(); refreshRecent(); }).catch(function () { }); };
+      } else {
+        box.innerHTML = '<div class="empty state"><span class="spinner"></span><b>' + esc(t('mastersLoading')) + '</b><small>' + esc(t('mastersSlow')) + '</small></div>';
+      }
     });
   }
 
@@ -253,7 +301,7 @@
     var q = qtyValue(); $('amountValue').textContent = q === null ? '—' : fmtYen(q * p.price);
   }
   function renderPicker(kind) {
-    if (!S.masters) return;
+    if (!S.masters) { renderMastersState(); return; }
     var list = kind === 'sup' ? S.masters.suppliers : S.masters.items;
     var q = $(kind + 'Search').value.trim();
     var byCode = kind === 'sup' ? S.supByCode : S.itemByCode;
@@ -290,7 +338,9 @@
     var btn = $('supAdd'), name = (btn.dataset.name || '').trim();
     if (!name) return;
     if (!CFG.mock && (!navigator.onLine || !apiReady())) { toast(t('needOnline'), 'bad'); return; }
-    if (!confirm(t('confirmAddSup', { name: name }))) return;
+    ask(t('confirmAddSup', { name: name })).then(function (yes) { if (yes) doAddSupplier(btn, name); });
+  }
+  function doAddSupplier(btn, name) {
     btn.disabled = true;
     api('addSupplier', { name: name, meta: { user: S.user, device: S.device } }).then(function (j) {
       var sp = j.supplier;
@@ -384,7 +434,7 @@
       itemCode: S.item.code, itemName: S.item.name, itemEn: S.item.en || '', unit: S.item.unit, priced: isPriced(S.item), price: p ? p.price : null, qty: qty,
       note: $('noteInput').value.trim(), user: S.user, status: 'wait', error: '' };
     S.today.unshift(e); saveToday();
-    S.queue.push({ id: e.id, date: e.date, supCode: e.supCode, itemCode: e.itemCode, qty: e.qty, note: e.note, user: e.user }); LS.set('gtp_queue', S.queue);
+    S.queue.push({ id: e.id, site: S.site, date: e.date, supCode: e.supCode, itemCode: e.itemCode, qty: e.qty, note: e.note, user: e.user }); LS.set('gtp_queue', S.queue);
     bumpFreq('sup', e.supCode); bumpFreq('item', e.itemCode);
     toast(t('saved') + '：' + displayName(S.item) + ' ' + fmtQty(qty) + unitLabel(S.item.unit) + (p ? ' = ' + fmtYen(qty * p.price) : ''), 'ok');
     S.item = null; $('qtyInput').value = ''; $('noteInput').value = ''; $('itemSearch').value = '';
@@ -392,29 +442,39 @@
     $('itemCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
     flush();
   }
+  // 送信待ちは拠点ごと。拠点を切り替えても、別拠点の分を今の拠点のシートへ送らない（取引先・商品コードは拠点ごとに別物）
+  function siteQueue() { return S.queue.filter(function (q) { return q.site === S.site; }); }
   function flush() {
     renderPending();
-    if (S.busy || !S.queue.length || !apiReady()) return Promise.resolve();
+    if (S.busy || !siteQueue().length || !apiReady()) return Promise.resolve();
     S.busy = true; setNet(null);
-    var batch = S.queue.slice(0, 50);
+    var before = siteQueue().length;
+    var batch = siteQueue().slice(0, 50).map(function (q) { return { id: q.id, date: q.date, supCode: q.supCode, itemCode: q.itemCode, qty: q.qty, note: q.note, user: q.user }; });
     return api('add', { entries: batch, meta: { user: S.user, device: S.device } }).then(function (j) {
       (j.results || []).forEach(function (r) {
         var e = S.today.filter(function (x) { return x.id === r.id; })[0];
-        if (r.ok) { S.queue = S.queue.filter(function (q) { return q.id !== r.id; }); if (e) { e.status = 'ok'; e.error = ''; if (r.price !== undefined) e.price = r.price; } }   // 単価はサーバー確定値で上書き
-        else { S.queue = S.queue.filter(function (q) { return q.id !== r.id; }); if (e) { e.status = 'error'; e.error = r.error || 'error'; } }
+        S.queue = S.queue.filter(function (q) { return q.id !== r.id; });
+        if (r.ok) { if (e) { e.status = 'ok'; e.error = ''; if (r.price !== undefined) e.price = r.price; } }   // 単価はサーバー確定値で上書き
+        else if (e) { e.status = 'error'; e.error = r.error || 'error'; }
       });
       LS.set('gtp_queue', S.queue); saveToday(); renderToday();
     }).catch(function (err) {
-      if (err && err.code === 'bad_pin') { toast(t('badPin'), 'bad'); }
-    }).then(function () { S.busy = false; renderPending(); if (S.queue.length && S.netOk) return flush(); });
+      if (err && (err.code === 'bad_pin' || err.code === 'no_pin' || err.code === 'wrong_sheet')) { toast(t('badPin'), 'bad'); }
+    }).then(function () {
+      S.busy = false; renderPending();
+      var left = siteQueue().length;
+      if (left && S.netOk && left < before) return flush();   // 減っているときだけ続ける（応答がおかしいときに送り続けない）
+    });
   }
   function renderPending() {
-    var n = S.queue.length; $('pendingBar').classList.toggle('hidden', n === 0);
+    var n = siteQueue().length; $('pendingBar').classList.toggle('hidden', n === 0);
     $('pendingText').textContent = t('pendingText', { n: n }); $('dPending').textContent = n;
     $('apiWarn').classList.toggle('hidden', apiReady());
   }
   function cancelEntry(e) {
-    if (!confirm(t('confirmCancel'))) return;
+    ask(t('confirmCancel')).then(function (yes) { if (yes) doCancelEntry(e); });
+  }
+  function doCancelEntry(e) {
     if (e.status === 'wait' || e.status === 'error') { S.queue = S.queue.filter(function (q) { return q.id !== e.id; }); LS.set('gtp_queue', S.queue); S.today = S.today.filter(function (x) { return x.id !== e.id; }); saveToday(); renderToday(); renderPending(); return; }
     api('cancel', { id: e.id, meta: { user: S.user, device: S.device } }).then(function () { e.status = 'cancel'; saveToday(); renderToday(); toast(t('cancelled'), 'ok'); })
       .catch(function (err) { toast(t('cancelFailed') + (err && err.message ? '：' + err.message : ''), 'bad'); });
@@ -478,7 +538,7 @@
   }
   function renderToday() {
     var td = todayStr(), from = daysAgoStr(RECENT_DAYS - 1);
-    S.today = S.today.filter(function (e) { return e.createdAt.slice(0, 10) >= from && String(e.id).indexOf('MIG-') !== 0; });
+    S.today = (Array.isArray(S.today) ? S.today : []).filter(function (e) { return e && typeof e.createdAt === 'string' && e.createdAt.slice(0, 10) >= from && String(e.id).indexOf('MIG-') !== 0; });
     var box = $('todayList'); box.innerHTML = '';
     $('todayCount').textContent = S.today.filter(function (e) { return e.status !== 'cancel'; }).length;
     if (!S.today.length) { box.innerHTML = '<div class="empty">—</div>'; return; }
@@ -502,7 +562,21 @@
   }
 
   // ─── 画面遷移 ───
-  function toast(msg, cls) { var el = $('toast'); el.textContent = msg; el.className = 'toast ' + (cls || ''); clearTimeout(toast.timer); toast.timer = setTimeout(function () { el.classList.add('hidden'); }, 2200); }
+  // エラーは読み切れるよう長めに出す
+  function toast(msg, cls) { var el = $('toast'); el.textContent = msg; el.className = 'toast ' + (cls || ''); clearTimeout(toast.timer); toast.timer = setTimeout(function () { el.classList.add('hidden'); }, cls === 'bad' ? 4500 : 2200); }
+  // 確認ダイアログ。window.confirm は LINE などのアプリ内ブラウザで出ずに「キャンセル」扱いになることがあるため、画面内に出す
+  function ask(msg) {
+    return new Promise(function (resolve) {
+      var box = $('confirmBox');
+      $('confirmText').textContent = msg; $('confirmYes').textContent = t('ok'); $('confirmNo').textContent = t('no');
+      var done = function (v) { box.classList.add('hidden'); $('confirmYes').onclick = $('confirmNo').onclick = box.onclick = null; resolve(v); };
+      $('confirmYes').onclick = function (ev) { ev.stopPropagation(); done(true); };
+      $('confirmNo').onclick = function (ev) { ev.stopPropagation(); done(false); };
+      box.onclick = function (ev) { if (ev.target === box) done(false); };
+      box.classList.remove('hidden');
+      setTimeout(function () { $('confirmYes').focus(); }, 30);
+    });
+  }
   function showSetup(err) {
     $('app').classList.add('hidden'); $('setup').classList.remove('hidden');
     var box = $('siteButtons'); box.innerHTML = '';
@@ -510,29 +584,41 @@
     $('userInput').value = S.user || ''; $('setupError').textContent = err || '';
     applyI18n();
   }
+  // 「はじめる」は通信を待たずにすぐ画面へ進む（以前はマスター取得を待っていたため、サーバーが遅い朝は25秒で失敗して先へ進めなかった）
   function start() {
     var user = $('userInput').value.trim();
     if (!S.site) { $('setupError').textContent = t('siteRequired'); return; }
-    S.user = user; $('startBtn').disabled = true; $('setupError').textContent = '';
-    var done = function () { LS.set('gtp_site', S.site); LS.set('gtp_user', S.user); $('startBtn').disabled = false; showApp(); };
-    if (!apiReady()) { done(); return; }
-    api('masters').then(function (j) { LS.set(mastersKey(), { fetchedAt: nowIso(), items: j.items, suppliers: j.suppliers, prices: j.prices || {}, pricePairs: j.pricePairs || [], features: j.features || [], cancelHours: j.cancelHours || 24 }); done(); })
-      .catch(function (err) {
-        $('startBtn').disabled = false;
-        if (err && err.code === 'bad_pin') { $('setupError').textContent = t('badPin'); return; }
-        if (err && err.code === 'network' && LS.get(mastersKey(), null)) { toast(t('offlineStart'), 'bad'); done(); return; }
-        $('setupError').textContent = (err && err.message) || t('netError');
-      });
+    if (LS.get('gtp_site', '') !== S.site || !S.masters) {   // 拠点を変えたら、前の拠点で選んだ取引先・商品を持ち越さない
+      S.sup = null; S.item = null; S.masters = null; S.itemByCode = null; S.supByCode = null;
+      $('supSearch').value = ''; $('itemSearch').value = ''; $('qtyInput').value = ''; $('itemAddForm').classList.add('hidden');
+    }
+    S.user = user; $('setupError').textContent = '';
+    LS.set('gtp_site', S.site); LS.set('gtp_user', S.user);
+    safeShowApp();
   }
   function showApp() {
     $('setup').classList.add('hidden'); $('app').classList.remove('hidden');
-    S.queue = LS.get('gtp_queue', []); S.today = LS.get(todayKey(), []);
+    var qd = LS.get('gtp_queue', []), legacy = false;
+    S.queue = (Array.isArray(qd) ? qd : []).filter(function (q) { return q && q.id; });
+    S.queue.forEach(function (q) { if (!q.site) { q.site = S.site; legacy = true; } });   // 旧版の送信待ち（拠点なし）は今の拠点の分とみなす
+    if (legacy) LS.set('gtp_queue', S.queue);
+    var td = LS.get(todayKey(), []); S.today = Array.isArray(td) ? td : [];
     $('userLabel').textContent = S.user || '—'; $('dSite').textContent = siteLabel(S.site); $('dUser').value = S.user; $('dVersion').textContent = CFG.version || '';
     var au = apiUrlFor(S.site);
     $('dApi').textContent = CFG.mock ? t('mockOn') : (au ? au.replace(/^https?:\/\//, '').slice(0, 40) + '…' : t('apiOff'));
     if (!$('dateInput').value) $('dateInput').value = todayStr();
-    applyI18n(); renderPending(); renderToday(); setNet(null);
-    loadMasters(false).then(function () { return flush(); }).then(function () { return refreshRecent(); }).catch(function (err) { toast((err && err.message) || t('netError'), 'bad'); });
+    applyI18n(); renderPending(); renderSelected(); renderToday(); setNet(null);
+    if (!S.masters) renderMastersState();
+    // マスターが取れなくても、送信待ちの送信と最近の登録の取得は進める
+    loadMasters(false).catch(function () { }).then(function () { return flush(); }).then(function () { return refreshRecent(); });
+  }
+  // 端末に残った古い・壊れた保存データで画面が作れないときは、送信待ち以外の保存値を消して開き直す
+  function safeShowApp() {
+    try { showApp(); }
+    catch (err) {
+      LS.del(todayKey()); LS.del(mastersKey()); S.today = []; S.masters = null; S.sup = null; S.item = null;
+      try { showApp(); } catch (err2) { showSetup('起動エラー / Startup error: ' + String((err2 && err2.message) || err2)); }
+    }
   }
 
   // ─── 起動 ───
@@ -541,8 +627,8 @@
     S.site = LS.get('gtp_site', ''); S.user = LS.get('gtp_user', '');
     LS.del('gtp_pin');   // 旧版が端末に保存していたPINは残さない
     // 拠点ごとのURL（?site=長野）で開くと拠点選択を飛ばせる。QRやホーム画面用
-    var q = /[?&]site=([^&]+)/.exec(location.search);
-    if (q) { var qs = decodeURIComponent(q[1]); if ((CFG.sites || []).indexOf(qs) >= 0) S.site = qs; }
+    var q = /[?&]site=([^&#]+)/.exec(location.search);
+    if (q) { var qs = ''; try { qs = decodeURIComponent(q[1].replace(/\+/g, ' ')).trim(); } catch (e) { qs = ''; } if ((CFG.sites || []).indexOf(qs) >= 0) S.site = qs; }
     S.device = LS.get('gtp_device', ''); if (!S.device) { S.device = uid('D'); LS.set('gtp_device', S.device); }
 
     document.querySelectorAll('.lang').forEach(function (b) { b.onclick = function () { setLang(b.getAttribute('data-lang')); }; });
@@ -566,11 +652,23 @@
     $('dUser').onchange = function () { S.user = $('dUser').value.trim(); LS.set('gtp_user', S.user); $('userLabel').textContent = S.user || '—'; };
     $('dReload').onclick = function () { loadMasters(true).then(function () { toast(t('mastersUpdated'), 'ok'); }).catch(function (err) { toast((err && err.message) || t('netError'), 'bad'); }); };
     $('dResetSite').onclick = function () { $('drawer').classList.add('hidden'); showSetup(); };
-    window.addEventListener('online', function () { setNet(null); flush(); }); window.addEventListener('offline', function () { setNet(false); });
-    document.addEventListener('visibilitychange', function () { if (!document.hidden && !$('app').classList.contains('hidden')) { flush().then(refreshRecent); } });
+    // 電波が戻った・アプリに戻ってきたときは、読み込めていないマスターも取り直す
+    var resume = function () { if ($('app').classList.contains('hidden')) return; if (!S.masters && S.mastersState !== 'loading') loadMasters(true).catch(function () { }); flush().then(refreshRecent); };
+    window.addEventListener('online', function () { setNet(null); resume(); }); window.addEventListener('offline', function () { setNet(false); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) resume(); });
     setInterval(function () { if (!$('app').classList.contains('hidden')) flush(); }, 30000);
+    registerOffline();
 
-    if (S.site) showApp(); else showSetup();
+    if (S.site) safeShowApp(); else showSetup();
   }
-  init();
+  // 電波がない場所でもアプリの画面を開けるよう、画面のファイルを端末に保存する（sw.js。通信できるときは常に最新を取りに行く）
+  function registerOffline() {
+    if (CFG.mock || !('serviceWorker' in navigator)) return;
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') return;
+    try { navigator.serviceWorker.register('sw.js').catch(function () { }); } catch (e) { }
+  }
+  try { init(); }
+  catch (err) {   // 起動で落ちても真っ白にしない
+    try { showSetup('起動エラー / Startup error: ' + String((err && err.message) || err)); } catch (e2) { }
+  }
 })();
