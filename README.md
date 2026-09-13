@@ -5,6 +5,7 @@
 
 - `index.html` / `app.js` / `styles.css` — アプリ本体（依存ライブラリなし）
 - `config.js` — `apiUrl` に Apps Script ウェブアプリの URL を設定する
+- `sw.js` — 画面のファイルだけを端末に保存し、電波がない場所でも開けるようにする（ネット優先。Apps Script の通信には触らない）
 - `mock-data.js` — `index.html?mock=1` で API を使わずに画面確認するためのマスター（生成物）
 
 設計・運用・導入手順は親フォルダの `README.md` と `仕様書.md` を参照。
