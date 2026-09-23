@@ -90,7 +90,6 @@ main{padding:12px;max-width:720px;margin:0 auto}
 .st.wait{background:var(--amberbg);color:var(--amber)}
 .st.cancel{background:#eef1f4;color:var(--muted)}
 .entry.cancelled{opacity:.55;text-decoration:line-through}
-.entry .x{flex:none;border:1px solid var(--line);background:#fff;color:var(--red);border-radius:8px;padding:6px 10px;font-weight:800;cursor:pointer;font-size:13px}
 .toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--navy);color:#fff;padding:14px 22px;border-radius:14px;font-weight:800;box-shadow:0 12px 30px #0006;z-index:20;max-width:92vw;text-align:center}
 .toast.ok{background:var(--green)}
 .toast.bad{background:var(--red)}
@@ -130,19 +129,28 @@ main{padding:12px;max-width:720px;margin:0 auto}
 .add-actions{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:8px}
 .add-actions .primary{padding:12px;font-size:17px}
 .price-line .pill.warn{color:var(--amber);background:var(--amberbg)}
-/* 最近の登録: 取消・数量を直す（2026-09-13） */
+/* 最近の登録: 修正依頼（2026-09-24。取消・数量を直すは経理が行う） */
 .entry{flex-direction:column;align-items:stretch;gap:8px}
 .entry .line{display:flex;align-items:center;gap:10px}
 .entry .t i{display:block;font-style:normal;font-weight:800;color:var(--ink)}
-.entry .acts{display:flex;justify-content:flex-end;gap:8px}
-.entry .fx{flex:none;border:1px solid var(--line);background:#fff;color:var(--blue);border-radius:8px;padding:6px 10px;font-weight:800;cursor:pointer;font-size:13px}
-.entry .fixbox{display:flex;align-items:center;gap:8px}
-.entry .fixbox input{flex:1;min-width:0;border:1.5px solid var(--blue);border-radius:8px;padding:8px 10px;font-size:18px;text-align:right;font-family:inherit}
-.entry .fixbox .u{color:var(--muted);font-weight:700}
-.entry .fixbox button{flex:none;border:0;border-radius:8px;padding:9px 12px;font-weight:800;cursor:pointer;font-size:14px}
-.entry .fixbox .fx-save{background:var(--blue);color:#fff}
-.entry .fixbox .fx-save:disabled{opacity:.55}
-.entry .fixbox .fx-close{background:#eef1f4;color:var(--ink)}
+.entry .acts{display:flex;justify-content:flex-end;align-items:center;gap:8px}
+.entry .rq{flex:none;border:1px solid var(--line);background:#fff;color:var(--blue);border-radius:8px;padding:6px 12px;font-weight:800;cursor:pointer;font-size:13px}
+.entry .req-open{font-size:12px;font-weight:800;color:var(--amber);background:var(--amberbg);border-radius:999px;padding:4px 10px}
+.entry .req-done{font-size:12px;font-weight:700;color:var(--green);background:var(--greenbg);border-radius:999px;padding:4px 10px}
+.reqbox{border:1.5px solid var(--blue);background:#f7fbfe;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.reqbox b{font-size:15px;color:var(--navy)}
+.reqbox .kinds{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.reqbox .kinds button{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:11px 4px;font-weight:800;font-size:14px;color:var(--ink);cursor:pointer}
+.reqbox .kinds button.active{border-color:var(--blue);background:#e8f2fb;color:var(--navy)}
+.reqbox label{font-size:13px;font-weight:800;color:var(--muted)}
+.reqbox .rq-qty{display:flex;flex-direction:column;gap:4px}
+.reqbox .rq-row{display:flex;align-items:center;gap:8px}
+.reqbox input{width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:16px;font-family:inherit;color:var(--ink);background:#fff}
+.reqbox .rq-row input{font-size:20px;font-weight:800;text-align:right}
+.reqbox .u{color:var(--muted);font-weight:700;flex:none}
+.reqbox .rq-actions{display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:2px}
+.reqbox .rq-actions .primary{padding:12px;font-size:16px}
+.reqbox .error{margin-top:0}
 /* スマホ対策（2026-09-13） */
 /* iPhone の日付欄は横幅を無視してはみ出すことがあるので、iOS だけ見た目を標準から外す */
 @supports (-webkit-touch-callout:none){

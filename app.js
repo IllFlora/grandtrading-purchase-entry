@@ -26,11 +26,11 @@
       apiNotSet: 'API URL が未設定です（config.js）。登録は端末内に保存され、設定後に送信されます。',
       settings: '設定', language: '言語', masters: 'マスター', reload: '再取得', pendingLabel: '送信待ち', version: '版',
       changeSite: '拠点を選び直す', frequent: 'よく使う', noMatch: '該当なし', saved: '登録しました', sent: '送信済み', waiting: '送信待ち',
-      cancelled: '取消', errorLabel: 'エラー', cancel: '取消', confirmCancel: 'この登録を取り消しますか？', pendingText: '送信待ち {n}件',
+      cancelled: '取消', errorLabel: 'エラー', pendingText: '送信待ち {n}件',
       qtyInvalid: '数量を入力してください', siteRequired: '拠点を選んでください', badPin: '登録できませんでした。経理に連絡してください',
       netError: '通信できません。電波を確認してください', offlineStart: 'オフラインのため保存済みマスターで開始します',
       mastersAt: '取得 {t}', mastersNone: '未取得', apiOff: '未設定', mockOn: 'モック（端末内のみ）', selectFirst: '取引先と商品を選んでください',
-      by: '入力', cancelFailed: '取り消せませんでした', mastersUpdated: 'マスターを更新しました', unit_kg: 'kg',
+      by: '入力', mastersUpdated: 'マスターを更新しました', unit_kg: 'kg',
       unitPrice: '単価', amount: '金額', supplierPrice: '取引先別単価',
       addSupplier: '＋「{name}」を新しい取引先として追加', confirmAddSup: '「{name}」を取引先に追加します。\n会社名・店名にまちがいはありませんか？',
       supAdded: '取引先を追加しました：{code} {name}', supExists: 'すでに登録されていました：{code} {name}',
@@ -39,7 +39,10 @@
       priceYen: '単価（円）', priceHint: '単価がわからなければ空欄でOK。入れた単価は経理が月末に確認します',
       addItemSubmit: '追加する', cancelAdd: 'やめる', itemAdded: '商品を追加しました：{code} {name}', itemExists: 'すでに登録されていました：{code} {name}',
       nameRequired: '商品名を入れてください', priceInvalid: '単価は数字で入れてください', pendingPrice: '現場入力の単価',
-      fixQty: '数量を直す', fixSave: '直す', fixClose: 'やめる', qtyFixed: '数量を直しました：{from} → {to}', needOnlineFix: '数量を直すのは、電波のあるところでしてください',
+      fixReq: '修正依頼', reqTitle: 'どこがちがいますか？', kind_qty: '数量がちがう', kind_cancel: '取り消したい', kind_other: 'その他',
+      correctQty: '正しい数量', reqNote: 'メモ（任意）', reqNoteOther: 'どう直してほしいか（必ず書く）', reqSend: '経理に送る', reqClose: 'やめる',
+      reqSent: '修正依頼を送りました。経理が直します', reqOpen: '修正依頼中', reqDone: '経理が対応済み', needOnlineReq: '修正依頼は、電波のあるところで送ってください',
+      reqKindRequired: 'どこがちがうかを選んでください', reqNoteRequired: 'どう直してほしいかを書いてください', reqSameQty: '今と同じ数量です',
       mastersLoading: '取引先・商品を読み込んでいます…', mastersSlow: '朝いちばんは30秒ほどかかることがあります。そのまま待ってください',
       mastersFailed: '読み込めませんでした。電波を確認して、もう一度押してください', tryAgain: 'もう一度読み込む',
       ok: 'OK', no: 'キャンセル'
@@ -53,11 +56,11 @@
       apiNotSet: 'API URL is not set (config.js). Entries stay on this device and are sent once it is set.',
       settings: 'Settings', language: 'Language', masters: 'Master data', reload: 'Reload', pendingLabel: 'Pending', version: 'Version',
       changeSite: 'Change site', frequent: 'Frequent', noMatch: 'No match', saved: 'Saved', sent: 'Sent', waiting: 'Pending',
-      cancelled: 'Cancelled', errorLabel: 'Error', cancel: 'Cancel', confirmCancel: 'Cancel this entry?', pendingText: '{n} pending',
+      cancelled: 'Cancelled', errorLabel: 'Error', pendingText: '{n} pending',
       qtyInvalid: 'Enter a quantity', siteRequired: 'Choose a site', badPin: 'Could not save. Please contact the administrator.',
       netError: 'Cannot reach the server. Check your connection.', offlineStart: 'Offline: starting with cached master data',
       mastersAt: 'fetched {t}', mastersNone: 'not loaded', apiOff: 'not set', mockOn: 'mock (device only)', selectFirst: 'Choose a supplier and an item',
-      by: 'by', cancelFailed: 'Could not cancel', mastersUpdated: 'Master data updated', unit_kg: 'kg',
+      by: 'by', mastersUpdated: 'Master data updated', unit_kg: 'kg',
       unitPrice: 'Unit price', amount: 'Amount', supplierPrice: 'supplier price',
       addSupplier: '+ Add "{name}" as a new supplier', confirmAddSup: 'Add "{name}" as a supplier?\nPlease check the company or shop name is correct.',
       supAdded: 'Supplier added: {code} {name}', supExists: 'Already registered: {code} {name}',
@@ -66,7 +69,10 @@
       priceYen: 'Unit price (yen)', priceHint: 'Leave the price blank if you do not know it. The office checks any price you enter at month end.',
       addItemSubmit: 'Add', cancelAdd: 'Cancel', itemAdded: 'Item added: {code} {name}', itemExists: 'Already registered: {code} {name}',
       nameRequired: 'Enter the item name', priceInvalid: 'Enter the price as a number', pendingPrice: 'price set on site',
-      fixQty: 'Fix qty', fixSave: 'Save', fixClose: 'Close', qtyFixed: 'Quantity fixed: {from} → {to}', needOnlineFix: 'You need a connection to fix an entry.',
+      fixReq: 'Request fix', reqTitle: 'What is wrong?', kind_qty: 'Wrong quantity', kind_cancel: 'Cancel this entry', kind_other: 'Other',
+      correctQty: 'Correct quantity', reqNote: 'Note (optional)', reqNoteOther: 'What should be fixed (required)', reqSend: 'Send to office', reqClose: 'Close',
+      reqSent: 'Fix request sent. The office will correct it.', reqOpen: 'Fix requested', reqDone: 'Fixed by office', needOnlineReq: 'You need a connection to send a fix request.',
+      reqKindRequired: 'Choose what is wrong', reqNoteRequired: 'Write what should be fixed', reqSameQty: 'That is the same quantity',
       mastersLoading: 'Loading suppliers and items…', mastersSlow: 'The first load of the day can take about 30 seconds. Please wait.',
       mastersFailed: 'Could not load. Check your connection and tap the button again.', tryAgain: 'Load again',
       ok: 'OK', no: 'Cancel'
@@ -111,7 +117,7 @@
   // Apps Script は朝いちばんなど久しぶりの呼び出しで30秒前後かかることがあり、Google 側が一時的に 404 のHTMLを返すこともある（2026-09-13 実測）。
   // そのため待ち時間は長めにし、読み込み（masters / recent）は自動で2回までやり直す。
   // 書き込みは「Googleの一時エラー」のときだけ1回やり直す（サーバーはID・名前で二重登録を防ぐので、やり直しても増えない）。
-  var POST_ACTIONS = ['add', 'cancel', 'fix', 'addSupplier', 'addItem'];
+  var POST_ACTIONS = ['add', 'fixRequest', 'addSupplier', 'addItem'];
   function api(action, body, opts) {
     body = body || {}; opts = opts || {};
     if (CFG.mock) return mockApi(action, body).then(function (j) { setNet(true); return j; });
@@ -162,7 +168,7 @@
       var m = window.GT_MOCK_MASTERS && window.GT_MOCK_MASTERS[S.site];
       if (!m) throw { code: 'bad_site', message: 'mock: site not found' };
       var log = LS.get('gtp_mock_log', []);
-      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], price: r[3] === '' || r[3] == null ? null : Number(r[3]), priced: r[3] !== '' && r[3] !== null, pending: String(r[5] || '').indexOf('単価要確認') >= 0 }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), prices: m.prices || {}, pricePairs: Object.keys(m.prices || {}), features: ['addSupplier', 'addItem', 'fix'], cancelHours: 0 };
+      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], price: r[3] === '' || r[3] == null ? null : Number(r[3]), priced: r[3] !== '' && r[3] !== null, pending: String(r[5] || '').indexOf('単価要確認') >= 0 }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), prices: m.prices || {}, pricePairs: Object.keys(m.prices || {}), features: ['addSupplier', 'addItem', 'fixRequest'], cancelHours: 0 };
       if (action === 'addItem') {
         var inm = String(body.name || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
         var same2 = m.items.filter(function (r) { return normName(r[1]) === normName(inm); })[0];
@@ -192,21 +198,19 @@
         });
         LS.set('gtp_mock_log', log); return { ok: true, results: results };
       }
-      if (action === 'cancel') { log.forEach(function (l) { if (l.id === body.id) l.status = '取消'; }); LS.set('gtp_mock_log', log); return { ok: true }; }
-      if (action === 'fix') {
-        var src = log.filter(function (l) { return l.id === body.id; })[0];
-        if (!src) throw { code: 'not_found', message: 'mock: not found' };
-        if (log.some(function (l) { return l.id === body.newId; })) return { ok: true, dup: true };
-        src.status = '取消';
-        var nw = JSON.parse(JSON.stringify(src)); nw.id = body.newId; nw.createdAt = nowIso(); nw.qty = Number(body.qty); nw.status = '有効'; nw.note = '数量修正';
-        log.push(nw); LS.set('gtp_mock_log', log);
-        var mi2 = {}, ms2 = {}; m.items.forEach(function (r) { mi2[r[0]] = r; }); m.suppliers.forEach(function (r) { ms2[r[0]] = r; });
-        var it2 = mi2[nw.itemCode] || [], sp2 = ms2[nw.supCode] || [];
-        return { ok: true, entry: { id: nw.id, createdAt: nw.createdAt, date: nw.date, supCode: nw.supCode, supName: sp2[1] || '', itemCode: nw.itemCode, itemName: it2[1] || '', unit: it2[4] || '', qty: nw.qty, price: nw.price, priceKind: nw.priceKind, user: nw.user, note: nw.note } };
+      if (action === 'fixRequest') {
+        var reqs = LS.get('gtp_mock_req', {});
+        if (reqs[body.reqId]) return { ok: true, dup: true };
+        var tgt = log.filter(function (l) { return l.id === body.id; })[0];
+        if (!tgt) throw { code: 'not_found', message: 'mock: not found' };
+        if (tgt.status === '取消') throw { code: 'already_cancelled', message: 'この登録はすでに取消になっています' };
+        reqs[body.reqId] = { id: body.id, kind: body.kind, qty: body.qty, note: body.note }; LS.set('gtp_mock_req', reqs);
+        tgt.req = '依頼中'; LS.set('gtp_mock_log', log);
+        return { ok: true, created: true, notified: false };
       }
       if (action === 'recent') {
         var items = {}, sups = {}; m.items.forEach(function (r) { items[r[0]] = r; }); m.suppliers.forEach(function (r) { sups[r[0]] = r; });
-        return { ok: true, entries: log.filter(function (l) { return l.site === S.site && l.createdAt.slice(0, 10) >= daysAgoStr(RECENT_DAYS - 1); }).map(function (l) { var it = items[l.itemCode] || [], sp = sups[l.supCode] || []; return { id: l.id, createdAt: l.createdAt, date: l.date, supCode: l.supCode, supName: sp[1] || '', itemCode: l.itemCode, itemName: it[1] || '', itemEn: it[2] || '', unit: it[4] || '', qty: l.qty, priced: l.price != null, price: l.price == null ? null : l.price, amount: l.price == null ? null : l.price * l.qty, priceKind: l.priceKind, status: l.status, user: l.user, note: l.note }; }).reverse() };
+        return { ok: true, entries: log.filter(function (l) { return l.site === S.site && l.createdAt.slice(0, 10) >= daysAgoStr(RECENT_DAYS - 1); }).map(function (l) { var it = items[l.itemCode] || [], sp = sups[l.supCode] || []; return { id: l.id, createdAt: l.createdAt, date: l.date, supCode: l.supCode, supName: sp[1] || '', itemCode: l.itemCode, itemName: it[1] || '', itemEn: it[2] || '', unit: it[4] || '', qty: l.qty, priced: l.price != null, price: l.price == null ? null : l.price, amount: l.price == null ? null : l.price * l.qty, priceKind: l.priceKind, status: l.status, user: l.user, note: l.note, req: l.req || '' }; }).reverse() };
       }
       throw { code: 'unknown' };
     });
@@ -262,9 +266,10 @@
   }
 
   // ─── ピッカー ───
-  function freqKey(kind) { return 'gtp_freq_' + S.site + '_' + kind; }
-  function bumpFreq(kind, code) { var f = LS.get(freqKey(kind), {}); f[code] = (f[code] || 0) + 1; LS.set(freqKey(kind), f); }
-  function frequentCodes(kind) { var f = LS.get(freqKey(kind), {}); return Object.keys(f).sort(function (a, b) { return f[b] - f[a]; }).slice(0, 8).map(Number); }
+  // 「よく使う」: 取引先は拠点ごと、商品は取引先ごと（2026-09-24〜 現場要望「業者を変えたら前の業者の商品履歴を出さない」）
+  function freqKey(kind) { return 'gtp_freq_' + S.site + '_' + kind + (kind === 'item' ? '_' + (S.sup ? S.sup.code : '') : ''); }
+  function bumpFreq(kind, code) { if (kind === 'item' && !S.sup) return; var f = LS.get(freqKey(kind), {}); f[code] = (f[code] || 0) + 1; LS.set(freqKey(kind), f); }
+  function frequentCodes(kind) { if (kind === 'item' && !S.sup) return []; var f = LS.get(freqKey(kind), {}); return Object.keys(f).sort(function (a, b) { return f[b] - f[a]; }).slice(0, 8).map(Number); }
   // 検索は全角・半角、スペース、大文字小文字を区別しない（「ﾐｰﾄ」でも「ミート」が出る、「６４」でもコード64が出る）
   function matches(q, o) {
     if (!q) return true;
@@ -417,7 +422,7 @@
     $('unpricedHint').classList.toggle('hidden', !(S.item && !isPriced(S.item)));
     updateSaveBtn();
   }
-  function change(kind) { if (kind === 'sup') S.sup = null; else { S.item = null; $('itemAddForm').classList.add('hidden'); } renderSelected(); $(kind + 'Search').value = ''; renderPicker(kind); setTimeout(function () { $(kind + 'Search').focus(); }, 50); }
+  function change(kind) { if (kind === 'sup') S.sup = null; else { S.item = null; $('itemAddForm').classList.add('hidden'); } renderSelected(); $(kind + 'Search').value = ''; renderPicker(kind); if (kind === 'sup') renderPicker('item'); setTimeout(function () { $(kind + 'Search').focus(); }, 50); }
   function qtyValue() { var v = $('qtyInput').value.replace(/[０-９．]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/,/g, '').trim(); var n = Number(v); return v && isFinite(n) && n > 0 ? n : null; }
   function updateSaveBtn() { $('saveBtn').disabled = !(S.sup && S.item && qtyValue() !== null && $('dateInput').value); updateAmount(); }
 
@@ -471,69 +476,77 @@
     $('pendingText').textContent = t('pendingText', { n: n }); $('dPending').textContent = n;
     $('apiWarn').classList.toggle('hidden', apiReady());
   }
-  function cancelEntry(e) {
-    ask(t('confirmCancel')).then(function (yes) { if (yes) doCancelEntry(e); });
-  }
-  function doCancelEntry(e) {
-    if (e.status === 'wait' || e.status === 'error') { S.queue = S.queue.filter(function (q) { return q.id !== e.id; }); LS.set('gtp_queue', S.queue); S.today = S.today.filter(function (x) { return x.id !== e.id; }); saveToday(); renderToday(); renderPending(); return; }
-    api('cancel', { id: e.id, meta: { user: S.user, device: S.device } }).then(function () { e.status = 'cancel'; saveToday(); renderToday(); toast(t('cancelled'), 'ok'); })
-      .catch(function (err) { toast(t('cancelFailed') + (err && err.message ? '：' + err.message : ''), 'bad'); });
-  }
   function refreshRecent() {
     if (!apiReady()) return Promise.resolve();
     return api('recent', { days: RECENT_DAYS }).then(function (j) {
       var mine = {}; S.today.forEach(function (e) { mine[e.id] = e; });
       (j.entries || []).forEach(function (r) {
         var st = r.status === '取消' ? 'cancel' : 'ok';
-        if (mine[r.id]) { mine[r.id].status = st; mine[r.id].error = ''; if (r.price !== undefined) mine[r.id].price = r.price; }
+        var e = mine[r.id];
+        if (e) {   // 経理がシートで直した数量・取消・依頼の状態もここで反映される
+          e.status = st; e.error = ''; e.qty = r.qty; e.date = r.date; e.unit = r.unit || e.unit; e.req = r.req || '';
+          if (r.price !== undefined) e.price = r.price;
+        }
         else {
           var it = S.itemByCode && S.itemByCode[r.itemCode], sp = S.supByCode && S.supByCode[r.supCode];
-          S.today.push({ id: r.id, createdAt: r.createdAt, date: r.date, supCode: r.supCode, supName: r.supName, supEn: sp ? sp.en : '', itemCode: r.itemCode, itemName: r.itemName, itemEn: it ? it.en : '', unit: r.unit, priced: r.priced, price: r.price == null ? null : r.price, qty: r.qty, note: r.note, user: r.user, status: st, remote: true });
+          S.today.push({ id: r.id, createdAt: r.createdAt, date: r.date, supCode: r.supCode, supName: r.supName, supEn: sp ? sp.en : '', itemCode: r.itemCode, itemName: r.itemName, itemEn: it ? it.en : '', unit: r.unit, priced: r.priced, price: r.price == null ? null : r.price, qty: r.qty, note: r.note, user: r.user, status: st, req: r.req || '', remote: true });
         }
       });
       S.today.sort(function (a, b) { return a.createdAt < b.createdAt ? 1 : -1; });
       saveToday(); renderToday();
     }).catch(function () { });
   }
-  // 一覧は直近3日分（登録日時で判断）。同じ拠点なら他の端末で入れた分も出て、取消・数量を直すができる（期限なし）
+  // 一覧は直近3日分（登録日時で判断）。同じ拠点なら他の端末で入れた分も出る
+  // 2026-09-24〜 取消・数量の修正は経理が行う（現場からの要望）。現場は送信済みの登録に「修正依頼」を送るだけ。依頼中は「修正依頼中」と出る
   var RECENT_DAYS = 3;
   function daysAgoStr(n) { var d = new Date(); d.setDate(d.getDate() - n); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function parseQty(v) { var s = String(v == null ? '' : v).normalize('NFKC').replace(/,/g, '').trim(); var n = Number(s); return s && isFinite(n) && n > 0 ? n : null; }
-  function openFix(e, d) {
-    if (d.querySelector('.fixbox')) return;
-    var fb = document.createElement('div'); fb.className = 'fixbox';
-    fb.innerHTML = '<input type="text" inputmode="decimal" autocomplete="off"><span class="u">' + esc(unitLabel(e.unit)) + '</span><button type="button" class="fx-save"></button><button type="button" class="fx-close"></button>';
-    var inp = fb.querySelector('input'); inp.value = fmtQty(e.qty);
-    fb.querySelector('.fx-save').textContent = t('fixSave'); fb.querySelector('.fx-close').textContent = t('fixClose');
-    fb.querySelector('.fx-close').onclick = function () { fb.remove(); };
-    fb.querySelector('.fx-save').onclick = function () { saveFix(e, inp.value, fb); };
-    inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') saveFix(e, inp.value, fb); });
-    d.appendChild(fb); setTimeout(function () { inp.focus(); inp.select(); }, 30);
+  var REQ_KINDS = ['qty', 'cancel', 'other'];
+  function openReq(e, d) {
+    if (d.querySelector('.reqbox')) return;
+    var box = document.createElement('div'); box.className = 'reqbox';
+    box.innerHTML = '<b></b><div class="kinds"></div>' +
+      '<div class="rq-qty hidden"><label></label><div class="rq-row"><input type="text" inputmode="decimal" autocomplete="off"><span class="u"></span></div></div>' +
+      '<label class="rq-note-l"></label><input class="rq-note" maxlength="200" autocomplete="off">' +
+      '<div class="rq-actions"><button type="button" class="ghost rq-close"></button><button type="button" class="primary rq-send"></button></div><div class="error"></div>';
+    var kinds = box.querySelector('.kinds'), qbox = box.querySelector('.rq-qty'), qinp = qbox.querySelector('input');
+    var note = box.querySelector('.rq-note'), noteL = box.querySelector('.rq-note-l'), err = box.querySelector('.error'), send = box.querySelector('.rq-send');
+    var kind = '', reqId = uid('R');   // フォームを開くたびに1つ。送り直しても二重にならない
+    box.querySelector('b').textContent = t('reqTitle');
+    qbox.querySelector('label').textContent = t('correctQty'); qbox.querySelector('.u').textContent = unitLabel(e.unit); qinp.value = fmtQty(e.qty);
+    noteL.textContent = t('reqNote');
+    box.querySelector('.rq-close').textContent = t('reqClose'); send.textContent = t('reqSend');
+    REQ_KINDS.forEach(function (k) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = t('kind_' + k);
+      b.onclick = function () {
+        kind = k; kinds.querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); });
+        qbox.classList.toggle('hidden', k !== 'qty'); noteL.textContent = t(k === 'other' ? 'reqNoteOther' : 'reqNote'); err.textContent = '';
+        setTimeout(function () { if (k === 'qty') { qinp.focus(); qinp.select(); } else if (k === 'other') note.focus(); }, 30);
+      };
+      kinds.appendChild(b);
+    });
+    box.querySelector('.rq-close').onclick = function () { box.remove(); };
+    send.onclick = function () { sendReq(e, { reqId: reqId, kind: kind, qtyRaw: qinp.value, note: note.value.trim() }, send, err); };
+    d.appendChild(box);
   }
-  function saveFix(e, raw, fb) {
-    var q = parseQty(raw); if (q === null) { toast(t('qtyInvalid'), 'bad'); return; }
-    if (q === Number(e.qty)) { fb.remove(); return; }
-    var old = e.qty;
-    if (e.status === 'wait') {   // まだ送っていない登録は、送信待ちの中身を直すだけ
-      e.qty = q; S.queue.forEach(function (x) { if (x.id === e.id) x.qty = q; }); LS.set('gtp_queue', S.queue); saveToday(); renderToday();
-      toast(t('qtyFixed', { from: fmtQty(old), to: fmtQty(q) }), 'ok'); return;
+  function sendReq(e, f, btn, err) {
+    if (!f.kind) { err.textContent = t('reqKindRequired'); return; }
+    var q = null;
+    if (f.kind === 'qty') {
+      q = parseQty(f.qtyRaw);
+      if (q === null) { err.textContent = t('qtyInvalid'); return; }
+      if (q === Number(e.qty)) { err.textContent = t('reqSameQty'); return; }
     }
-    if (!CFG.mock && (!navigator.onLine || !apiReady())) { toast(t('needOnlineFix'), 'bad'); return; }
-    var btn = fb.querySelector('.fx-save'); btn.disabled = true;
-    api('fix', { id: e.id, qty: q, newId: uid('E'), meta: { user: S.user, device: S.device } }).then(function (j) {
-      e.status = 'cancel';
-      if (j.entry) {
-        var r = j.entry, it = S.itemByCode && S.itemByCode[r.itemCode], sp = S.supByCode && S.supByCode[r.supCode];
-        S.today.push({ id: r.id, createdAt: r.createdAt, date: r.date, supCode: r.supCode, supName: r.supName, supEn: sp ? sp.en : '', itemCode: r.itemCode, itemName: r.itemName, itemEn: it ? it.en : '', unit: r.unit, priced: r.price != null, price: r.price == null ? null : r.price, qty: r.qty, note: r.note, user: r.user, status: 'ok' });
-      }
-      S.today.sort(function (a, b) { return a.createdAt < b.createdAt ? 1 : -1; });
-      saveToday(); renderToday();
-      toast(t('qtyFixed', { from: fmtQty(old), to: fmtQty(q) }), 'ok');
-      if (j.dup) refreshRecent();
-    }).catch(function (err) {
+    if (f.kind === 'other' && !f.note) { err.textContent = t('reqNoteRequired'); return; }
+    if (!CFG.mock && (!navigator.onLine || !apiReady())) { err.textContent = t('needOnlineReq'); return; }
+    btn.disabled = true; err.textContent = '';
+    api('fixRequest', { id: e.id, reqId: f.reqId, kind: f.kind, qty: q === null ? '' : q, note: f.note, meta: { user: S.user, device: S.device } }).then(function () {
+      e.req = '依頼中'; saveToday(); renderToday(); toast(t('reqSent'), 'ok');
+    }).catch(function (x) {
       btn.disabled = false;
-      if (err && err.code === 'network') toast(t('needOnlineFix'), 'bad');
-      else toast((err && err.message) || t('netError'), 'bad');
+      if (x && x.code === 'network') err.textContent = t('needOnlineReq');
+      else if (x && x.code === 'already_cancelled') { e.status = 'cancel'; saveToday(); renderToday(); toast(x.message, 'bad'); }
+      else err.textContent = (x && x.message) || t('netError');
     });
   }
   function renderToday() {
@@ -549,12 +562,13 @@
       var day = e.createdAt.slice(0, 10), when = (day === td ? '' : '<i>' + Number(day.slice(5, 7)) + '/' + Number(day.slice(8, 10)) + '</i>') + esc(e.createdAt.slice(11, 16));
       d.innerHTML = '<div class="line"><span class="t">' + when + '</span><div class="body"><b>' + esc(spName) + '</b><small>' + esc(itName) + (e.date !== td ? ' · ' + esc(e.date) : '') + (e.user ? ' · ' + esc(e.user) : '') + (e.error ? ' · ' + esc(e.error) : '') + '</small></div>' +
         '<span class="q">' + esc(fmtQty(e.qty)) + '<small> ' + esc(unitLabel(e.unit)) + '</small>' + (e.price != null ? '<em>' + esc(fmtYen(e.qty * e.price)) + '</em>' : '') + '</span>' + st + '</div>';
-      if (e.status !== 'cancel') {
+      if (e.status === 'ok' && hasFeature('fixRequest')) {   // 送信待ち・エラーの登録は、まだシートに無いので依頼できない
         var acts = document.createElement('div'); acts.className = 'acts';
-        if (e.status === 'wait' || (e.status === 'ok' && hasFeature('fix'))) {
-          var fx = document.createElement('button'); fx.type = 'button'; fx.className = 'fx'; fx.textContent = t('fixQty'); fx.onclick = function () { openFix(e, d); }; acts.appendChild(fx);
+        if (e.req === '依頼中') acts.innerHTML = '<span class="req-open">' + esc(t('reqOpen')) + '</span>';
+        else {
+          if (e.req === '対応済み') acts.innerHTML = '<span class="req-done">' + esc(t('reqDone')) + '</span>';
+          var rb = document.createElement('button'); rb.type = 'button'; rb.className = 'rq'; rb.textContent = t('fixReq'); rb.onclick = function () { openReq(e, d); }; acts.appendChild(rb);
         }
-        var x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.textContent = t('cancel'); x.onclick = function () { cancelEntry(e); }; acts.appendChild(x);
         d.appendChild(acts);
       }
       box.appendChild(d);
@@ -626,6 +640,7 @@
     S.lang = LS.get('gtp_lang', (navigator.language || 'ja').indexOf('ja') === 0 ? 'ja' : 'en');
     S.site = LS.get('gtp_site', ''); S.user = LS.get('gtp_user', '');
     LS.del('gtp_pin');   // 旧版が端末に保存していたPINは残さない
+    (CFG.sites || []).forEach(function (s) { LS.del('gtp_freq_' + s + '_item'); });   // 旧版の「拠点ごとの商品履歴」（2026-09-24 から取引先ごと）
     // 拠点ごとのURL（?site=長野）で開くと拠点選択を飛ばせる。QRやホーム画面用
     var q = /[?&]site=([^&#]+)/.exec(location.search);
     if (q) { var qs = ''; try { qs = decodeURIComponent(q[1].replace(/\+/g, ' ')).trim(); } catch (e) { qs = ''; } if ((CFG.sites || []).indexOf(qs) >= 0) S.site = qs; }
