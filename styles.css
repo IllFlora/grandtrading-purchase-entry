@@ -89,7 +89,7 @@ main{padding:12px;max-width:720px;margin:0 auto}
 .st.ok{background:var(--greenbg);color:var(--green)}
 .st.wait{background:var(--amberbg);color:var(--amber)}
 .st.cancel{background:#eef1f4;color:var(--muted)}
-.entry.cancelled{opacity:.55;text-decoration:line-through}
+.entry.cancelled .line{opacity:.55;text-decoration:line-through}
 .toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--navy);color:#fff;padding:14px 22px;border-radius:14px;font-weight:800;box-shadow:0 12px 30px #0006;z-index:20;max-width:92vw;text-align:center}
 .toast.ok{background:var(--green)}
 .toast.bad{background:var(--red)}

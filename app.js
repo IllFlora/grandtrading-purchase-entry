@@ -43,6 +43,7 @@
       correctQty: '正しい数量', reqNote: 'メモ（任意）', reqNoteOther: 'どう直してほしいか（必ず書く）', reqSend: '経理に送る', reqClose: 'やめる',
       reqSent: '修正依頼を送りました。経理が直します', reqOpen: '修正依頼中', reqDone: '経理が対応済み', needOnlineReq: '修正依頼は、電波のあるところで送ってください',
       reqKindRequired: 'どこがちがうかを選んでください', reqNoteRequired: 'どう直してほしいかを書いてください', reqSameQty: '今と同じ数量です',
+      reqSending: '送っています…', reqAlready: 'この登録はすでに修正依頼中です。経理の対応を待ってください',
       mastersLoading: '取引先・商品を読み込んでいます…', mastersSlow: '朝いちばんは30秒ほどかかることがあります。そのまま待ってください',
       mastersFailed: '読み込めませんでした。電波を確認して、もう一度押してください', tryAgain: 'もう一度読み込む',
       ok: 'OK', no: 'キャンセル'
@@ -73,6 +74,7 @@
       correctQty: 'Correct quantity', reqNote: 'Note (optional)', reqNoteOther: 'What should be fixed (required)', reqSend: 'Send to office', reqClose: 'Close',
       reqSent: 'Fix request sent. The office will correct it.', reqOpen: 'Fix requested', reqDone: 'Fixed by office', needOnlineReq: 'You need a connection to send a fix request.',
       reqKindRequired: 'Choose what is wrong', reqNoteRequired: 'Write what should be fixed', reqSameQty: 'That is the same quantity',
+      reqSending: 'Sending…', reqAlready: 'A fix is already requested for this entry. Please wait for the office.',
       mastersLoading: 'Loading suppliers and items…', mastersSlow: 'The first load of the day can take about 30 seconds. Please wait.',
       mastersFailed: 'Could not load. Check your connection and tap the button again.', tryAgain: 'Load again',
       ok: 'OK', no: 'Cancel'
@@ -204,6 +206,7 @@
         var tgt = log.filter(function (l) { return l.id === body.id; })[0];
         if (!tgt) throw { code: 'not_found', message: 'mock: not found' };
         if (tgt.status === '取消') throw { code: 'already_cancelled', message: 'この登録はすでに取消になっています' };
+        if (tgt.req === '依頼中') throw { code: 'already_requested', message: 'この登録はすでに修正依頼中です' };
         reqs[body.reqId] = { id: body.id, kind: body.kind, qty: body.qty, note: body.note }; LS.set('gtp_mock_req', reqs);
         tgt.req = '依頼中'; LS.set('gtp_mock_log', log);
         return { ok: true, created: true, notified: false };
@@ -484,7 +487,9 @@
         var st = r.status === '取消' ? 'cancel' : 'ok';
         var e = mine[r.id];
         if (e) {   // 経理がシートで直した数量・取消・依頼の状態もここで反映される
-          e.status = st; e.error = ''; e.qty = r.qty; e.date = r.date; e.unit = r.unit || e.unit; e.req = r.req || '';
+          e.status = st; e.error = ''; e.qty = r.qty; e.date = r.date; e.unit = r.unit || e.unit;
+          // 送った直後の「依頼中」は、それより前に作られた一覧（行き違い・サーバーの一時保存）で消さない
+          if (r.req || !(e.req === '依頼中' && e.reqAt && Date.now() - e.reqAt < REQ_HOLD_MS)) e.req = r.req || '';
           if (r.price !== undefined) e.price = r.price;
         }
         else {
@@ -502,8 +507,12 @@
   function daysAgoStr(n) { var d = new Date(); d.setDate(d.getDate() - n); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function parseQty(v) { var s = String(v == null ? '' : v).normalize('NFKC').replace(/,/g, '').trim(); var n = Number(s); return s && isFinite(n) && n > 0 ? n : null; }
   var REQ_KINDS = ['qty', 'cancel', 'other'];
+  // 修正依頼フォームの中身と送信中の状態は画面の外に持つ。一覧を描き直しても（電波復帰・アプリに戻る・更新）入力途中や送信中が消えないように
+  var REQ_FORM = {};   // 登録ID → { reqId, kind, qtyRaw, note, sending, error, sent }
+  var REQ_HOLD_MS = 15 * 60 * 1000;
   function openReq(e, d) {
     if (d.querySelector('.reqbox')) return;
+    var f = REQ_FORM[e.id] || (REQ_FORM[e.id] = { reqId: uid('R'), kind: '', qtyRaw: fmtQty(e.qty), note: '', sending: false, error: '', sent: '' });
     var box = document.createElement('div'); box.className = 'reqbox';
     box.innerHTML = '<b></b><div class="kinds"></div>' +
       '<div class="rq-qty hidden"><label></label><div class="rq-row"><input type="text" inputmode="decimal" autocomplete="off"><span class="u"></span></div></div>' +
@@ -511,42 +520,51 @@
       '<div class="rq-actions"><button type="button" class="ghost rq-close"></button><button type="button" class="primary rq-send"></button></div><div class="error"></div>';
     var kinds = box.querySelector('.kinds'), qbox = box.querySelector('.rq-qty'), qinp = qbox.querySelector('input');
     var note = box.querySelector('.rq-note'), noteL = box.querySelector('.rq-note-l'), err = box.querySelector('.error'), send = box.querySelector('.rq-send');
-    var kind = '', reqId = uid('R');   // フォームを開くたびに1つ。送り直しても二重にならない
     box.querySelector('b').textContent = t('reqTitle');
-    qbox.querySelector('label').textContent = t('correctQty'); qbox.querySelector('.u').textContent = unitLabel(e.unit); qinp.value = fmtQty(e.qty);
-    noteL.textContent = t('reqNote');
-    box.querySelector('.rq-close').textContent = t('reqClose'); send.textContent = t('reqSend');
+    qbox.querySelector('label').textContent = t('correctQty'); qbox.querySelector('.u').textContent = unitLabel(e.unit);
+    qinp.value = f.qtyRaw; note.value = f.note; err.textContent = f.error;
+    qinp.oninput = function () { f.qtyRaw = qinp.value; }; note.oninput = function () { f.note = note.value; };
+    box.querySelector('.rq-close').textContent = t('reqClose');
+    send.textContent = t(f.sending ? 'reqSending' : 'reqSend'); send.disabled = f.sending;
+    var pick = function (k, focus) {
+      f.kind = k;
+      kinds.querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x.getAttribute('data-kind') === k); });
+      qbox.classList.toggle('hidden', k !== 'qty'); noteL.textContent = t(k === 'other' ? 'reqNoteOther' : 'reqNote');
+      if (focus) setTimeout(function () { if (k === 'qty') { qinp.focus(); qinp.select(); } else if (k === 'other') note.focus(); }, 30);
+    };
     REQ_KINDS.forEach(function (k) {
-      var b = document.createElement('button'); b.type = 'button'; b.textContent = t('kind_' + k);
-      b.onclick = function () {
-        kind = k; kinds.querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); });
-        qbox.classList.toggle('hidden', k !== 'qty'); noteL.textContent = t(k === 'other' ? 'reqNoteOther' : 'reqNote'); err.textContent = '';
-        setTimeout(function () { if (k === 'qty') { qinp.focus(); qinp.select(); } else if (k === 'other') note.focus(); }, 30);
-      };
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = t('kind_' + k); b.setAttribute('data-kind', k); b.disabled = f.sending;
+      b.onclick = function () { f.error = ''; err.textContent = ''; pick(k, true); };
       kinds.appendChild(b);
     });
-    box.querySelector('.rq-close').onclick = function () { box.remove(); };
-    send.onclick = function () { sendReq(e, { reqId: reqId, kind: kind, qtyRaw: qinp.value, note: note.value.trim() }, send, err); };
+    noteL.textContent = t('reqNote');
+    if (f.kind) pick(f.kind, false);
+    box.querySelector('.rq-close').onclick = function () { if (f.sending) return; delete REQ_FORM[e.id]; box.remove(); };
+    send.onclick = function () { sendReq(e); };
     d.appendChild(box);
   }
-  function sendReq(e, f, btn, err) {
-    if (!f.kind) { err.textContent = t('reqKindRequired'); return; }
-    var q = null;
-    if (f.kind === 'qty') {
-      q = parseQty(f.qtyRaw);
-      if (q === null) { err.textContent = t('qtyInvalid'); return; }
-      if (q === Number(e.qty)) { err.textContent = t('reqSameQty'); return; }
-    }
-    if (f.kind === 'other' && !f.note) { err.textContent = t('reqNoteRequired'); return; }
-    if (!CFG.mock && (!navigator.onLine || !apiReady())) { err.textContent = t('needOnlineReq'); return; }
-    btn.disabled = true; err.textContent = '';
-    api('fixRequest', { id: e.id, reqId: f.reqId, kind: f.kind, qty: q === null ? '' : q, note: f.note, meta: { user: S.user, device: S.device } }).then(function () {
-      e.req = '依頼中'; saveToday(); renderToday(); toast(t('reqSent'), 'ok');
+  function sendReq(e) {
+    var f = REQ_FORM[e.id]; if (!f || f.sending) return;
+    var q = null, note = String(f.note || '').trim(), msg = '';
+    if (!f.kind) msg = t('reqKindRequired');
+    else if (f.kind === 'qty' && (q = parseQty(f.qtyRaw)) === null) msg = t('qtyInvalid');
+    else if (f.kind === 'qty' && q === Number(e.qty)) msg = t('reqSameQty');
+    else if (f.kind === 'other' && !note) msg = t('reqNoteRequired');
+    else if (!CFG.mock && (!navigator.onLine || !apiReady())) msg = t('needOnlineReq');
+    if (msg) { f.error = msg; renderToday(); return; }
+    // 通信が途切れたあと内容を変えて送り直すときは、別の依頼にする（同じIDだとサーバーは最初の内容のまま「重複」として扱う）
+    var payload = JSON.stringify([f.kind, q, note]);
+    if (f.sent && f.sent !== payload) f.reqId = uid('R');
+    f.sent = payload; f.sending = true; f.error = ''; renderToday();
+    var done = function (toastMsg, cls) { delete REQ_FORM[e.id]; saveToday(); renderToday(); toast(toastMsg, cls); };
+    api('fixRequest', { id: e.id, reqId: f.reqId, kind: f.kind, qty: q === null ? '' : q, note: note, meta: { user: S.user, device: S.device } }).then(function () {
+      e.req = '依頼中'; e.reqAt = Date.now(); done(t('reqSent'), 'ok');
     }).catch(function (x) {
-      btn.disabled = false;
-      if (x && x.code === 'network') err.textContent = t('needOnlineReq');
-      else if (x && x.code === 'already_cancelled') { e.status = 'cancel'; saveToday(); renderToday(); toast(x.message, 'bad'); }
-      else err.textContent = (x && x.message) || t('netError');
+      f.sending = false;
+      if (x && x.code === 'already_requested') { e.req = '依頼中'; e.reqAt = Date.now(); done(t('reqAlready'), 'bad'); return; }
+      if (x && x.code === 'already_cancelled') { e.status = 'cancel'; done(x.message, 'bad'); return; }
+      f.error = x && x.code === 'network' ? t('needOnlineReq') : ((x && x.message) || t('netError'));
+      renderToday();
     });
   }
   function renderToday() {
@@ -570,6 +588,11 @@
           var rb = document.createElement('button'); rb.type = 'button'; rb.className = 'rq'; rb.textContent = t('fixReq'); rb.onclick = function () { openReq(e, d); }; acts.appendChild(rb);
         }
         d.appendChild(acts);
+        if (REQ_FORM[e.id] && e.req !== '依頼中') openReq(e, d);   // 描き直す前に開いていたフォームを戻す
+      } else if (e.status === 'cancel' && e.req) {   // 経理が取消で対応した依頼も「対応済み」と分かるように
+        var ca = document.createElement('div'); ca.className = 'acts';
+        ca.innerHTML = '<span class="' + (e.req === '対応済み' ? 'req-done' : 'req-open') + '">' + esc(t(e.req === '対応済み' ? 'reqDone' : 'reqOpen')) + '</span>';
+        d.appendChild(ca);
       }
       box.appendChild(d);
     });
