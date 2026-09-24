@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="仕入れ入力">
 <meta name="format-detection" content="telephone=no">
 <title>Grand Trading 仕入れ入力</title>
-<link rel="stylesheet" href="styles.css?v=20260924-2">
+<link rel="stylesheet" href="styles.css?v=20260924-3">
 </head>
 <body>
 <noscript><p style="padding:24px;font-size:18px">このアプリは JavaScript を使います。ブラウザの設定で JavaScript をオンにしてください。</p></noscript>
@@ -21,16 +21,16 @@
     <div class="brand-mark">GT</div>
     <p class="eyebrow">GRAND TRADING</p>
     <h1 data-i18n="appTitle">仕入れ入力</h1>
-    <p class="muted" data-i18n="setupLead">どこの拠点ですか？（初回だけ）</p>
+    <p class="muted" data-i18n="setupLead">どこの拠点ですか？（初回のみ）</p>
     <div class="lang-row">
       <button type="button" class="lang" data-lang="ja">日本語</button>
       <button type="button" class="lang" data-lang="en">English</button>
     </div>
     <label data-i18n="site">拠点</label>
     <div id="siteButtons" class="site-buttons"></div>
-    <label data-i18n="userName">あなたの名前（入れなくてもOK）</label>
+    <label data-i18n="userName">名前（任意）</label>
     <input id="userInput" maxlength="20" autocomplete="off" data-i18n-placeholder="userPlaceholder" placeholder="例: 山田">
-    <button id="startBtn" class="primary" type="button" data-i18n="start">はじめる</button>
+    <button id="startBtn" class="primary" type="button" data-i18n="start">始める</button>
     <div id="setupError" class="error"></div>
   </div>
 </section>
@@ -91,8 +91,8 @@
             <div><label for="newItemUnit" data-i18n="unitWord">単位</label><select id="newItemUnit"></select></div>
             <div><label for="newItemPrice" data-i18n="priceYen">単価（円）</label><input id="newItemPrice" inputmode="decimal" autocomplete="off" placeholder="50"></div>
           </div>
-          <small data-i18n="priceHint">単価がわからなければ空欄でOK。入れた単価は経理が月末に確認します</small>
-          <div class="add-actions"><button id="newItemCancel" class="ghost" type="button" data-i18n="cancelAdd">やめる</button><button id="newItemSubmit" class="primary" type="button" data-i18n="addItemSubmit">追加する</button></div>
+          <small data-i18n="priceHint">単価が分からなければ空欄で構いません。入力した単価は経理が月末に確認します</small>
+          <div class="add-actions"><button id="newItemCancel" class="ghost" type="button" data-i18n="cancelAdd">キャンセル</button><button id="newItemSubmit" class="primary" type="button" data-i18n="addItemSubmit">追加する</button></div>
           <div id="newItemError" class="error"></div>
         </div>
       </div>
@@ -106,7 +106,7 @@
       </div>
       <input id="noteInput" class="note" maxlength="60" autocomplete="off" data-i18n-placeholder="notePlaceholder" placeholder="メモ（任意）">
       <div id="priceLine" class="price-line hidden"><span data-i18n="unitPrice">単価</span> <b id="priceValue"></b><span id="priceKind" class="pill hidden"></span><span class="sep"></span><span data-i18n="amount">金額</span> <b id="amountValue">—</b></div>
-      <div id="unpricedHint" class="hint hidden" data-i18n="unpricedHint">この商品は単価が都度決めです。数量だけ登録し、金額は経理がシートで入れます。</div>
+      <div id="unpricedHint" class="hint hidden" data-i18n="unpricedHint">この商品は単価がその都度決まります。数量だけ登録してください。金額は経理がシートで入力します。</div>
       <button id="saveBtn" class="primary big" type="button" disabled data-i18n="save">登録する</button>
       <div id="saveError" class="error"></div>
     </section>
@@ -127,7 +127,7 @@
       <h3 data-i18n="settings">設定</h3>
       <dl class="kv">
         <dt data-i18n="site">拠点</dt><dd id="dSite"></dd>
-        <dt data-i18n="userName">入力者</dt><dd><input id="dUser" maxlength="20"></dd>
+        <dt data-i18n="userName">名前（任意）</dt><dd><input id="dUser" maxlength="20"></dd>
         <dt data-i18n="language">言語</dt><dd><button type="button" class="lang" data-lang="ja">日本語</button> <button type="button" class="lang" data-lang="en">English</button></dd>
         <dt data-i18n="masters">マスター</dt><dd><span id="dMasters"></span> <button id="dReload" class="ghost" type="button" data-i18n="reload">再取得</button></dd>
         <dt data-i18n="pendingLabel">送信待ち</dt><dd id="dPending">0</dd>
@@ -147,7 +147,7 @@
   </div>
 </div>
 
-<script src="config.js?v=20260924-2"></script>
-<script src="app.js?v=20260924-2"></script>
+<script src="config.js?v=20260924-3"></script>
+<script src="app.js?v=20260924-3"></script>
 </body>
 </html>

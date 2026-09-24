@@ -18,10 +18,10 @@
 
   var I18N = {
     ja: {
-      appTitle: '仕入れ入力', setupLead: 'どこの拠点ですか？（初回だけ）', site: '拠点', userName: 'あなたの名前（入れなくてもOK）',
-      userPlaceholder: '例: 山田', start: 'はじめる', date: '日付', today: '今日', supplier: '取引先', item: '商品', qty: '数量', change: '変更',
+      appTitle: '仕入れ入力', setupLead: 'どこの拠点ですか？（初回のみ）', site: '拠点', userName: '名前（任意）',
+      userPlaceholder: '例: 山田', start: '始める', date: '日付', today: '今日', supplier: '取引先', item: '商品', qty: '数量', change: '変更',
       searchPlaceholder: 'コードまたは名前で検索', notePlaceholder: 'メモ（任意）',
-      unpricedHint: 'この商品は単価が都度決めです。数量だけ登録し、金額は経理がシートで入れます。',
+      unpricedHint: 'この商品は単価がその都度決まります。数量だけ登録してください。金額は経理がシートで入力します。',
       save: '登録する', todayEntries: '最近の登録（3日分）', refresh: '更新', retry: '再送',
       apiNotSet: 'API URL が未設定です（config.js）。登録は端末内に保存され、設定後に送信されます。',
       settings: '設定', language: '言語', masters: 'マスター', reload: '再取得', pendingLabel: '送信待ち', version: '版',
@@ -32,19 +32,19 @@
       mastersAt: '取得 {t}', mastersNone: '未取得', apiOff: '未設定', mockOn: 'モック（端末内のみ）', selectFirst: '取引先と商品を選んでください',
       by: '入力', mastersUpdated: 'マスターを更新しました', unit_kg: 'kg',
       unitPrice: '単価', amount: '金額', supplierPrice: '取引先別単価',
-      addSupplier: '＋「{name}」を新しい取引先として追加', confirmAddSup: '「{name}」を取引先に追加します。\n会社名・店名にまちがいはありませんか？',
-      supAdded: '取引先を追加しました：{code} {name}', supExists: 'すでに登録されていました：{code} {name}',
-      needOnline: '追加は、電波のあるところでしてください', featureNotReady: 'この機能はまだ使えません。経理に連絡してください',
+      addSupplier: '＋「{name}」を新しい取引先として追加', confirmAddSup: '「{name}」を取引先に追加します。\n会社名・店名に間違いはありませんか？',
+      supAdded: '取引先を追加しました：{code} {name}', supExists: '既に登録されています：{code} {name}',
+      needOnline: '追加は電波の届く場所で行ってください', featureNotReady: 'この機能はまだ使えません。経理に連絡してください',
       addItem: '＋「{name}」を新しい商品として追加', newItemTitle: '新しい商品を追加', itemNameLabel: '商品名', unitWord: '単位',
-      priceYen: '単価（円）', priceHint: '単価がわからなければ空欄でOK。入れた単価は経理が月末に確認します',
-      addItemSubmit: '追加する', cancelAdd: 'やめる', itemAdded: '商品を追加しました：{code} {name}', itemExists: 'すでに登録されていました：{code} {name}',
-      nameRequired: '商品名を入れてください', priceInvalid: '単価は数字で入れてください', pendingPrice: '現場入力の単価',
-      fixReq: '修正依頼', reqTitle: 'どこがちがいますか？', kind_qty: '数量がちがう', kind_cancel: '取り消したい', kind_other: 'その他',
-      correctQty: '正しい数量', reqNote: 'メモ（任意）', reqNoteOther: 'どう直してほしいか（必ず書く）', reqSend: '経理に送る', reqClose: 'やめる',
-      reqSent: '修正依頼を送りました。経理が直します', reqOpen: '修正依頼中', reqDone: '経理が対応済み', needOnlineReq: '修正依頼は、電波のあるところで送ってください',
-      reqKindRequired: 'どこがちがうかを選んでください', reqNoteRequired: 'どう直してほしいかを書いてください', reqSameQty: '今と同じ数量です',
-      reqSending: '送っています…', reqAlready: 'この登録はすでに修正依頼中です。経理の対応を待ってください',
-      mastersLoading: '取引先・商品を読み込んでいます…', mastersSlow: '朝いちばんは30秒ほどかかることがあります。そのまま待ってください',
+      priceYen: '単価（円）', priceHint: '単価が分からなければ空欄で構いません。入力した単価は経理が月末に確認します',
+      addItemSubmit: '追加する', cancelAdd: 'キャンセル', itemAdded: '商品を追加しました：{code} {name}', itemExists: '既に登録されています：{code} {name}',
+      nameRequired: '商品名を入力してください', priceInvalid: '単価は数字で入力してください', pendingPrice: '現場入力の単価',
+      fixReq: '修正依頼', reqTitle: 'どこが違いますか？', kind_qty: '数量が違う', kind_cancel: '取り消したい', kind_other: 'その他',
+      correctQty: '正しい数量', reqNote: 'メモ（任意）', reqNoteOther: '直してほしい内容（必須）', reqSend: '経理に送る', reqClose: '閉じる',
+      reqSent: '修正依頼を送りました。経理が直します', reqOpen: '修正依頼中', reqDone: '経理が対応済み', needOnlineReq: '修正依頼は電波の届く場所で送ってください',
+      reqKindRequired: 'どこが違うかを選んでください', reqNoteRequired: '直してほしい内容を書いてください', reqSameQty: '今と同じ数量です',
+      reqSending: '送信中…', reqAlready: 'この登録は既に修正依頼中です。経理の対応をお待ちください', reqCancelled: 'この登録は既に取消になっています',
+      mastersLoading: '取引先・商品を読み込んでいます…', mastersSlow: '朝一番は30秒ほどかかることがあります。そのままお待ちください',
       mastersFailed: '読み込めませんでした。電波を確認して、もう一度押してください', tryAgain: 'もう一度読み込む',
       ok: 'OK', no: 'キャンセル'
     },
@@ -74,7 +74,7 @@
       correctQty: 'Correct quantity', reqNote: 'Note (optional)', reqNoteOther: 'What should be fixed (required)', reqSend: 'Send to office', reqClose: 'Close',
       reqSent: 'Fix request sent. The office will correct it.', reqOpen: 'Fix requested', reqDone: 'Fixed by office', needOnlineReq: 'You need a connection to send a fix request.',
       reqKindRequired: 'Choose what is wrong', reqNoteRequired: 'Write what should be fixed', reqSameQty: 'That is the same quantity',
-      reqSending: 'Sending…', reqAlready: 'A fix is already requested for this entry. Please wait for the office.',
+      reqSending: 'Sending…', reqAlready: 'A fix is already requested for this entry. Please wait for the office.', reqCancelled: 'This entry has already been cancelled.',
       mastersLoading: 'Loading suppliers and items…', mastersSlow: 'The first load of the day can take about 30 seconds. Please wait.',
       mastersFailed: 'Could not load. Check your connection and tap the button again.', tryAgain: 'Load again',
       ok: 'OK', no: 'Cancel'
@@ -205,8 +205,8 @@
         if (reqs[body.reqId]) return { ok: true, dup: true };
         var tgt = log.filter(function (l) { return l.id === body.id; })[0];
         if (!tgt) throw { code: 'not_found', message: 'mock: not found' };
-        if (tgt.status === '取消') throw { code: 'already_cancelled', message: 'この登録はすでに取消になっています' };
-        if (tgt.req === '依頼中') throw { code: 'already_requested', message: 'この登録はすでに修正依頼中です' };
+        if (tgt.status === '取消') throw { code: 'already_cancelled', message: 'この登録は既に取消になっています' };
+        if (tgt.req === '依頼中') throw { code: 'already_requested', message: 'この登録は既に修正依頼中です' };
         reqs[body.reqId] = { id: body.id, kind: body.kind, qty: body.qty, note: body.note }; LS.set('gtp_mock_req', reqs);
         tgt.req = '依頼中'; LS.set('gtp_mock_log', log);
         return { ok: true, created: true, notified: false };
@@ -562,7 +562,7 @@
     }).catch(function (x) {
       f.sending = false;
       if (x && x.code === 'already_requested') { e.req = '依頼中'; e.reqAt = Date.now(); done(t('reqAlready'), 'bad'); return; }
-      if (x && x.code === 'already_cancelled') { e.status = 'cancel'; done(x.message, 'bad'); return; }
+      if (x && x.code === 'already_cancelled') { e.status = 'cancel'; done(t('reqCancelled'), 'bad'); return; }
       f.error = x && x.code === 'network' ? t('needOnlineReq') : ((x && x.message) || t('netError'));
       renderToday();
     });
@@ -621,7 +621,7 @@
     $('userInput').value = S.user || ''; $('setupError').textContent = err || '';
     applyI18n();
   }
-  // 「はじめる」は通信を待たずにすぐ画面へ進む（以前はマスター取得を待っていたため、サーバーが遅い朝は25秒で失敗して先へ進めなかった）
+  // 「始める」は通信を待たずにすぐ画面へ進む（以前はマスター取得を待っていたため、サーバーが遅い朝は25秒で失敗して先へ進めなかった）
   function start() {
     var user = $('userInput').value.trim();
     if (!S.site) { $('setupError').textContent = t('siteRequired'); return; }
