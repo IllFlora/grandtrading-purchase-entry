@@ -664,6 +664,11 @@
     S.site = LS.get('gtp_site', ''); S.user = LS.get('gtp_user', '');
     LS.del('gtp_pin');   // 旧版が端末に保存していたPINは残さない
     (CFG.sites || []).forEach(function (s) { LS.del('gtp_freq_' + s + '_item'); });   // 旧版の「拠点ごとの商品履歴」（2026-09-24 から取引先ごと）
+    // 2026-09-29 千葉の取引先・商品マスターが番号を振り直して入れ替わった。「よく使う」は番号で覚えているので、千葉の分を1回だけ消す
+    if (LS.get('gtp_master_rev_千葉', '') !== '2026-09-29') {
+      try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('gtp_freq_千葉_') === 0) localStorage.removeItem(k); }); } catch (e) { }
+      LS.set('gtp_master_rev_千葉', '2026-09-29');
+    }
     // 拠点ごとのURL（?site=長野）で開くと拠点選択を飛ばせる。QRやホーム画面用
     var q = /[?&]site=([^&#]+)/.exec(location.search);
     if (q) { var qs = ''; try { qs = decodeURIComponent(q[1].replace(/\+/g, ' ')).trim(); } catch (e) { qs = ''; } if ((CFG.sites || []).indexOf(qs) >= 0) S.site = qs; }
