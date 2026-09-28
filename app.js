@@ -39,8 +39,11 @@
       priceYen: '単価（円）', priceHint: '単価が分からなければ空欄で構いません。入力した単価は経理が月末に確認します',
       addItemSubmit: '追加する', cancelAdd: 'キャンセル', itemAdded: '商品を追加しました：{code} {name}', itemExists: '既に登録されています：{code} {name}',
       nameRequired: '商品名を入力してください', priceInvalid: '単価は数字で入力してください', pendingPrice: '現場入力の単価',
-      freeSup: '✎「{name}」をこのまま使う（手入力）', freeItem: '✎「{name}」をこのまま使う（手入力）', freeTag: '手入力',
-      freeItemTitle: '手入力の商品（一覧には追加しません）', freeItemSubmit: 'この内容で使う',
+      freeSupOpen: '✎ 一覧にない取引先を手入力する', freeItemOpen: '✎ 一覧にない商品を手入力する', freeTag: '手入力',
+      freeSupTitle: '取引先を手入力（一覧には追加しません）', supNameLabel: '取引先名', freeSupSubmit: 'この名前で使う',
+      freeSupHint: '電波がなくても使えます。何度も来る取引先は、検索して「新しい取引先として追加」を使ってください',
+      supNameRequired: '取引先名を入力してください', freeUsedExisting: '一覧にある「{name}」を選びました',
+      freeItemTitle: '商品を手入力（一覧には追加しません）', freeItemSubmit: 'この内容で使う',
       freeHint: '電波がなくても使えます。単価が分からなければ空欄で構いません。経理が後で確認します',
       freeUnpricedHint: '手入力の商品です。数量だけ登録してください。金額は経理が確認して入力します。',
       fixReq: '修正依頼', reqTitle: 'どこが違いますか？', kind_qty: '数量が違う', kind_cancel: '取り消したい', kind_other: 'その他',
@@ -74,8 +77,11 @@
       priceYen: 'Unit price (yen)', priceHint: 'Leave the price blank if you do not know it. The office checks any price you enter at month end.',
       addItemSubmit: 'Add', cancelAdd: 'Cancel', itemAdded: 'Item added: {code} {name}', itemExists: 'Already registered: {code} {name}',
       nameRequired: 'Enter the item name', priceInvalid: 'Enter the price as a number', pendingPrice: 'price set on site',
-      freeSup: '✎ Use "{name}" as typed', freeItem: '✎ Use "{name}" as typed', freeTag: 'typed',
-      freeItemTitle: 'Typed-in item (not added to the list)', freeItemSubmit: 'Use this',
+      freeSupOpen: '✎ Type in a supplier not on the list', freeItemOpen: '✎ Type in an item not on the list', freeTag: 'typed',
+      freeSupTitle: 'Type in a supplier (not added to the list)', supNameLabel: 'Supplier name', freeSupSubmit: 'Use this name',
+      freeSupHint: 'Works without signal. For a supplier who comes often, search and use "Add as a new supplier" instead.',
+      supNameRequired: 'Enter the supplier name', freeUsedExisting: 'Picked "{name}" from the list',
+      freeItemTitle: 'Type in an item (not added to the list)', freeItemSubmit: 'Use this',
       freeHint: 'Works without signal. Leave the price blank if unsure; the office will check it.',
       freeUnpricedHint: 'Typed-in item. Enter the quantity only; the office sets the amount.',
       fixReq: 'Request fix', reqTitle: 'What is wrong?', kind_qty: 'Wrong quantity', kind_cancel: 'Cancel this entry', kind_other: 'Other',
@@ -116,7 +122,7 @@
     $('siteLabel').textContent = siteLabel(S.site);
     document.title = 'Grand Trading ' + t('appTitle');
   }
-  function setLang(l) { S.lang = l; LS.set('gtp_lang', l); applyI18n(); if (S.masters) { renderPicker('sup'); renderPicker('item'); renderSelected(); renderToday(); } else if (!$('app').classList.contains('hidden')) { renderMastersState(); renderToday(); } }
+  function setLang(l) { S.lang = l; LS.set('gtp_lang', l); applyI18n(); if (!$('itemAddForm').classList.contains('hidden')) itemFormTexts(); if (S.masters) { renderPicker('sup'); renderPicker('item'); renderSelected(); renderToday(); } else if (!$('app').classList.contains('hidden')) { renderMastersState(); renderToday(); } }
 
   // ─── 通信 ───
   function apiUrlFor(site) { return (CFG.apiUrls && CFG.apiUrls[site]) || CFG.apiUrl || ''; }
@@ -320,6 +326,7 @@
   }
   function renderPicker(kind) {
     if (!S.masters) { renderMastersState(); return; }
+    renderFreeOpen(kind);
     var list = kind === 'sup' ? S.masters.suppliers : S.masters.items;
     var q = $(kind + 'Search').value.trim();
     var byCode = kind === 'sup' ? S.supByCode : S.itemByCode;
@@ -351,19 +358,29 @@
       !list.some(function (o) { return normName(o.name) === normName(q); });
     btn.classList.toggle('hidden', !show);
     if (show) { btn.textContent = t('addSupplier', { name: q }); btn.dataset.name = q; }
-    renderFree('sup', q, list, true);
   }
-  // 2026-09-29〜 手入力: 一覧にない取引先・商品を、マスターに足さずにその1件だけ文字のまま使う（電波がなくても使える）
-  function renderFree(kind, q, list, extra) {
-    var btn = $(kind + 'Free'); if (!btn) return;
-    var show = extra && hasFeature('freeEntry') && normName(q).length >= 1 && !/^[0-9]+$/.test(normName(q)) &&
-      !list.some(function (o) { return normName(o.name) === normName(q); });
-    btn.classList.toggle('hidden', !show);
-    if (show) { btn.textContent = t(kind === 'sup' ? 'freeSup' : 'freeItem', { name: q }); btn.dataset.name = q; }
+  // 2026-09-29〜 手入力: 一覧にない取引先・商品を、マスターに足さずにその1件だけ文字のまま使う（電波がなくても使える）。
+  // 検索欄のすぐ下に「✎ 一覧にない〇〇を手入力する」を常に出す。押すと検索欄と候補を隠して入力欄だけにする（どこに書けばいいか迷わないように）
+  function pickerFormOpen(kind) { return !$(kind === 'sup' ? 'supFreeForm' : 'itemAddForm').classList.contains('hidden'); }
+  function renderFreeOpen(kind) { var b = $(kind + 'FreeOpen'); if (b) b.classList.toggle('hidden', !hasFeature('freeEntry') || pickerFormOpen(kind)); }
+  function showPickerForm(kind, open) {
+    $(kind === 'sup' ? 'supFreeForm' : 'itemAddForm').classList.toggle('hidden', !open);
+    $(kind + 'Search').classList.toggle('hidden', open); $(kind + 'Browse').classList.toggle('hidden', open);
+    renderFreeOpen(kind);
   }
-  function useFreeSupplier() {
-    var name = ($('supFree').dataset.name || '').trim(); if (!name) return;
-    $('supSearch').value = '';
+  function findByName(list, name) { return (list || []).filter(function (o) { return normName(o.name) === normName(name); })[0]; }
+  function openSupFree() {
+    $('freeSupName').value = $('supSearch').value.trim(); $('freeSupError').textContent = '';
+    showPickerForm('sup', true);
+    if (!$('freeSupName').value) setTimeout(function () { $('freeSupName').focus(); }, 50);
+  }
+  function closeSupFree() { showPickerForm('sup', false); renderPicker('sup'); }
+  function submitSupFree() {
+    var name = $('freeSupName').value.normalize('NFKC').replace(/\s+/g, ' ').trim();
+    if (!name) { $('freeSupError').textContent = t('supNameRequired'); return; }
+    showPickerForm('sup', false); $('supSearch').value = ''; renderPicker('sup');
+    var same = findByName(S.masters && S.masters.suppliers, name);   // 一覧にある名前なら、そちらを選ぶ（同じ取引先が手入力で増えないように）
+    if (same) { select('sup', same); toast(t('freeUsedExisting', { name: same.name }), 'ok'); return; }
     select('sup', { code: '', name: name, en: '', free: true });
   }
   function addSupplier() {
@@ -397,29 +414,36 @@
       !list.some(function (o) { return normName(o.name) === normName(q); }) && $('itemAddForm').classList.contains('hidden');
     btn.classList.toggle('hidden', !show);
     if (show) { btn.textContent = t('addItem', { name: q }); btn.dataset.name = q; }
-    renderFree('item', q, list, $('itemAddForm').classList.contains('hidden'));
   }
   var ITEM_FORM_MODE = 'add';
+  function itemFormTexts() {
+    var free = ITEM_FORM_MODE === 'free';
+    $('newItemTitle').textContent = t(free ? 'freeItemTitle' : 'newItemTitle');
+    $('newItemHint').textContent = t(free ? 'freeHint' : 'priceHint');
+    $('newItemSubmit').textContent = t(free ? 'freeItemSubmit' : 'addItemSubmit');
+  }
   function openItemForm(mode) {
     ITEM_FORM_MODE = mode === 'free' ? 'free' : 'add';
     var free = ITEM_FORM_MODE === 'free';
     var sel = $('newItemUnit'); sel.innerHTML = '';
     UNIT_CHOICES.forEach(function (u) { var o = document.createElement('option'); o.value = u; o.textContent = unitLabel(u); sel.appendChild(o); });
-    $('newItemName').value = $(free ? 'itemFree' : 'itemAdd').dataset.name || ''; $('newItemPrice').value = ''; $('newItemError').textContent = '';
-    $('newItemTitle').textContent = t(free ? 'freeItemTitle' : 'newItemTitle');
-    $('newItemHint').textContent = t(free ? 'freeHint' : 'priceHint');
-    $('newItemSubmit').textContent = t(free ? 'freeItemSubmit' : 'addItemSubmit');
-    $('itemAdd').classList.add('hidden'); $('itemFree').classList.add('hidden'); $('itemAddForm').classList.remove('hidden');
-    setTimeout(function () { $('newItemPrice').focus(); }, 50);
+    $('newItemName').value = free ? $('itemSearch').value.trim() : ($('itemAdd').dataset.name || ''); $('newItemPrice').value = ''; $('newItemError').textContent = '';
+    itemFormTexts();
+    showPickerForm('item', true);
+    if (!free) setTimeout(function () { $('newItemPrice').focus(); }, 50);
+    else if (!$('newItemName').value) setTimeout(function () { $('newItemName').focus(); }, 50);
   }
-  function closeItemForm() { $('itemAddForm').classList.add('hidden'); renderPicker('item'); }
+  function closeItemForm() { showPickerForm('item', false); renderPicker('item'); }
   function submitItem() {
     var name = $('newItemName').value.trim(), unit = $('newItemUnit').value;
     var raw = $('newItemPrice').value.normalize('NFKC').replace(/[,円\s]/g, '');
     if (!name) { $('newItemError').textContent = t('nameRequired'); return; }
     if (raw !== '' && !(isFinite(Number(raw)) && Number(raw) >= 0)) { $('newItemError').textContent = t('priceInvalid'); return; }
     if (ITEM_FORM_MODE === 'free') {   // 手入力はマスターに足さない。サーバーにも送らず、そのまま選んだ状態にする
-      $('itemAddForm').classList.add('hidden'); $('itemSearch').value = '';
+      name = name.normalize('NFKC').replace(/\s+/g, ' ').trim();
+      showPickerForm('item', false); $('itemSearch').value = ''; renderPicker('item');
+      var same = findByName(S.masters && S.masters.items, name);   // 一覧にある名前なら、そちらを選ぶ（同じ商品が手入力で増えないように）
+      if (same) { select('item', same); toast(t('freeUsedExisting', { name: same.name }), 'ok'); return; }
       select('item', { code: '', name: name, en: '', unit: unit, price: raw === '' ? null : Number(raw), priced: raw !== '', pending: raw !== '', free: true });
       return;
     }
@@ -430,7 +454,7 @@
       if (!S.masters.items.some(function (o) { return o.code === it.code; })) S.masters.items.push(it);
       S.masters.items.sort(function (a, b) { return a.code - b.code; });
       LS.set(mastersKey(), S.masters);
-      $('itemAddForm').classList.add('hidden'); $('itemSearch').value = '';
+      showPickerForm('item', false); $('itemSearch').value = '';
       useMasters(S.masters);
       select('item', S.itemByCode[it.code]);
       bumpFreq('item', it.code);
@@ -462,7 +486,7 @@
     $('unpricedHint').textContent = t(S.item && S.item.free ? 'freeUnpricedHint' : 'unpricedHint');
     updateSaveBtn();
   }
-  function change(kind) { if (kind === 'sup') S.sup = null; else { S.item = null; $('itemAddForm').classList.add('hidden'); } renderSelected(); $(kind + 'Search').value = ''; renderPicker(kind); if (kind === 'sup') renderPicker('item'); setTimeout(function () { $(kind + 'Search').focus(); }, 50); }
+  function change(kind) { if (kind === 'sup') S.sup = null; else S.item = null; showPickerForm(kind, false); renderSelected(); $(kind + 'Search').value = ''; renderPicker(kind); if (kind === 'sup') renderPicker('item'); setTimeout(function () { $(kind + 'Search').focus(); }, 50); }
   function qtyValue() { var v = $('qtyInput').value.replace(/[０-９．]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/,/g, '').trim(); var n = Number(v); return v && isFinite(n) && n > 0 ? n : null; }
   function updateSaveBtn() { $('saveBtn').disabled = !(S.sup && S.item && qtyValue() !== null && $('dateInput').value); updateAmount(); }
 
@@ -723,8 +747,9 @@
     $('dateInput').onchange = updateSaveBtn;
     $('supSearch').oninput = function () { renderPicker('sup'); }; $('itemSearch').oninput = function () { renderPicker('item'); };
     $('supChange').onclick = function () { change('sup'); };
-    $('supAdd').onclick = addSupplier; $('supFree').onclick = useFreeSupplier;
-    $('itemAdd').onclick = function () { openItemForm('add'); }; $('itemFree').onclick = function () { openItemForm('free'); }; $('newItemCancel').onclick = closeItemForm; $('newItemSubmit').onclick = submitItem;
+    $('supAdd').onclick = addSupplier; $('supFreeOpen').onclick = openSupFree; $('freeSupCancel').onclick = closeSupFree; $('freeSupSubmit').onclick = submitSupFree;
+    $('freeSupName').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitSupFree(); });
+    $('itemAdd').onclick = function () { openItemForm('add'); }; $('itemFreeOpen').onclick = function () { openItemForm('free'); }; $('newItemCancel').onclick = closeItemForm; $('newItemSubmit').onclick = submitItem;
     $('newItemPrice').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitItem(); }); $('itemChange').onclick = function () { change('item'); };
     $('qtyInput').oninput = updateSaveBtn;
     $('qtyInput').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !$('saveBtn').disabled) save(); });

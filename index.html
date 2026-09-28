@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="仕入れ入力">
 <meta name="format-detection" content="telephone=no">
 <title>Grand Trading 仕入れ入力</title>
-<link rel="stylesheet" href="styles.css?v=20260929-2">
+<link rel="stylesheet" href="styles.css?v=20260929-3">
 </head>
 <body>
 <noscript><p style="padding:24px;font-size:18px">このアプリは JavaScript を使います。ブラウザの設定で JavaScript をオンにしてください。</p></noscript>
@@ -69,10 +69,20 @@
       <div id="supSelected" class="selected hidden"></div>
       <div id="supPicker" class="picker">
         <input id="supSearch" class="search" type="search" autocomplete="off" data-i18n-placeholder="searchPlaceholder" placeholder="コードまたは名前で検索">
-        <div id="supFrequent" class="chips"></div>
-        <div id="supList" class="list"></div>
-        <button id="supAdd" class="add-row hidden" type="button"></button>
-        <button id="supFree" class="add-row free hidden" type="button"></button>
+        <button id="supFreeOpen" class="free-open hidden" type="button" data-i18n="freeSupOpen">✎ 一覧にない取引先を手入力する</button>
+        <div id="supFreeForm" class="add-form hidden">
+          <b data-i18n="freeSupTitle">取引先を手入力（一覧には追加しません）</b>
+          <label for="freeSupName" data-i18n="supNameLabel">取引先名</label>
+          <input id="freeSupName" maxlength="60" autocomplete="off">
+          <small data-i18n="freeSupHint">電波がなくても使えます。何度も来る取引先は、検索して「新しい取引先として追加」を使ってください</small>
+          <div class="add-actions"><button id="freeSupCancel" class="ghost" type="button" data-i18n="cancelAdd">キャンセル</button><button id="freeSupSubmit" class="primary" type="button" data-i18n="freeSupSubmit">この名前で使う</button></div>
+          <div id="freeSupError" class="error"></div>
+        </div>
+        <div id="supBrowse">
+          <div id="supFrequent" class="chips"></div>
+          <div id="supList" class="list"></div>
+          <button id="supAdd" class="add-row hidden" type="button"></button>
+        </div>
       </div>
     </section>
 
@@ -81,10 +91,7 @@
       <div id="itemSelected" class="selected hidden"></div>
       <div id="itemPicker" class="picker">
         <input id="itemSearch" class="search" type="search" autocomplete="off" data-i18n-placeholder="searchPlaceholder" placeholder="コードまたは名前で検索">
-        <div id="itemFrequent" class="chips"></div>
-        <div id="itemList" class="list"></div>
-        <button id="itemAdd" class="add-row hidden" type="button"></button>
-        <button id="itemFree" class="add-row free hidden" type="button"></button>
+        <button id="itemFreeOpen" class="free-open hidden" type="button" data-i18n="freeItemOpen">✎ 一覧にない商品を手入力する</button>
         <div id="itemAddForm" class="add-form hidden">
           <b id="newItemTitle" data-i18n="newItemTitle">新しい商品を追加</b>
           <label for="newItemName" data-i18n="itemNameLabel">商品名</label>
@@ -96,6 +103,11 @@
           <small id="newItemHint" data-i18n="priceHint">単価が分からなければ空欄で構いません。入力した単価は経理が月末に確認します</small>
           <div class="add-actions"><button id="newItemCancel" class="ghost" type="button" data-i18n="cancelAdd">キャンセル</button><button id="newItemSubmit" class="primary" type="button" data-i18n="addItemSubmit">追加する</button></div>
           <div id="newItemError" class="error"></div>
+        </div>
+        <div id="itemBrowse">
+          <div id="itemFrequent" class="chips"></div>
+          <div id="itemList" class="list"></div>
+          <button id="itemAdd" class="add-row hidden" type="button"></button>
         </div>
       </div>
     </section>
@@ -149,7 +161,7 @@
   </div>
 </div>
 
-<script src="config.js?v=20260929-2"></script>
-<script src="app.js?v=20260929-2"></script>
+<script src="config.js?v=20260929-3"></script>
+<script src="app.js?v=20260929-3"></script>
 </body>
 </html>
