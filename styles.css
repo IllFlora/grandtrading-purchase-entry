@@ -119,6 +119,8 @@ main{padding:12px;max-width:720px;margin:0 auto}
 .add-row{display:block;width:100%;margin-top:10px;border:1.5px dashed var(--blue);background:#f3f8fc;color:var(--blue);border-radius:12px;padding:13px 12px;font-size:16px;font-weight:800;text-align:left;cursor:pointer;min-height:52px;overflow-wrap:anywhere}
 .add-row:active{background:#e1eef8}
 .add-row:disabled{opacity:.55}
+.add-row.free{border-color:#8a9bab;background:#fff;color:#33485c;margin-top:8px}
+.selected .code.free{font-size:12px;font-weight:800;color:#8f5d00;background:#fdf1d4;border-radius:6px;padding:2px 6px}
 /* 商品の追加フォーム（2026-09-13） */
 .add-form{margin-top:10px;border:1.5px solid var(--blue);background:#f7fbfe;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px}
 .add-form b{font-size:16px;color:var(--navy)}
