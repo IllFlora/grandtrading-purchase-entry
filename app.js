@@ -19,7 +19,7 @@
   var I18N = {
     ja: {
       appTitle: '仕入れ入力', setupLead: 'どこの拠点ですか？（初回のみ）', site: '拠点', userName: '名前（任意）',
-      userPlaceholder: '例: 山田', start: '始める', date: '日付', today: '今日', supplier: '取引先', item: '商品', qty: '数量', change: '変更',
+      userPlaceholder: '例: 山田', start: '始める', date: '日付', today: '今日', supplier: '取引先', item: '商品', qty: '数量', lotAmount: '金額（円）', lotHint: 'まとめて買い取った金額を入れてください（例: 15000）。数量は「1式」で登録されます。', lotInvalid: '金額を入力してください', change: '変更',
       searchPlaceholder: 'コードまたは名前で検索', notePlaceholder: 'メモ（任意）',
       unpricedHint: 'この商品は単価がその都度決まります。数量だけ登録してください。金額は経理がシートで入力します。',
       save: '登録する', todayEntries: '最近の登録（3日分）', refresh: '更新', retry: '再送',
@@ -57,7 +57,7 @@
     },
     en: {
       appTitle: 'Purchase Entry', setupLead: 'Which site are you at? (first time only)', site: 'Site', userName: 'Your name (optional)',
-      userPlaceholder: 'e.g. Yamada', start: 'Start', date: 'Date', today: 'Today', supplier: 'Supplier', item: 'Item', qty: 'Quantity', change: 'Change',
+      userPlaceholder: 'e.g. Yamada', start: 'Start', date: 'Date', today: 'Today', supplier: 'Supplier', item: 'Item', qty: 'Quantity', lotAmount: 'Amount (yen)', lotHint: 'Enter the total amount paid for the lot (e.g. 15000). It is saved as 1 lot.', lotInvalid: 'Enter the amount', change: 'Change',
       searchPlaceholder: 'Search by code or name', notePlaceholder: 'Note (optional)',
       unpricedHint: 'This item has no fixed unit price. Enter the quantity only; the office sets the amount in the sheet.',
       save: 'Save', todayEntries: 'Recent entries (3 days)', refresh: 'Refresh', retry: 'Retry',
@@ -94,7 +94,7 @@
       ok: 'OK', no: 'Cancel'
     }
   };
-  var UNIT_EN = { 'kg': 'kg', '個': 'pcs', '本': 'pcs', '枚': 'pcs', '台': 'units', '箱': 'boxes', '式': 'lot', '一式': 'lot', '袋': 'bags', '円': 'yen' };
+  var UNIT_EN = { 'kg': 'kg', '個': 'pcs', '本': 'pcs', '枚': 'pcs', '台': 'units', '箱': 'boxes', '式': 'lot', '一式': 'lot', '1式': 'lot', '袋': 'bags', '円': 'yen' };
   var SITE_EN = { '長野': 'Nagano', '千葉': 'Chiba' };
 
   var S = { lang: 'ja', site: '', pin: '', user: '', device: '', masters: null, sup: null, item: null, today: [], queue: [], busy: false, netOk: null };
@@ -184,7 +184,7 @@
       var m = window.GT_MOCK_MASTERS && window.GT_MOCK_MASTERS[S.site];
       if (!m) throw { code: 'bad_site', message: 'mock: site not found' };
       var log = LS.get('gtp_mock_log', []);
-      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], price: r[3] === '' || r[3] == null ? null : Number(r[3]), priced: r[3] !== '' && r[3] !== null, pending: String(r[5] || '').indexOf('単価要確認') >= 0 }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), prices: m.prices || {}, pricePairs: Object.keys(m.prices || {}), features: ['addSupplier', 'addItem', 'fixRequest', 'freeEntry'], cancelHours: 0 };
+      if (action === 'masters') return { ok: true, items: m.items.map(function (r) { return { code: r[0], name: r[1], en: r[2], unit: r[4], price: r[3] === '' || r[3] == null ? null : Number(r[3]), priced: r[3] !== '' && r[3] !== null, pending: String(r[5] || '').indexOf('単価要確認') >= 0 }; }), suppliers: m.suppliers.map(function (r) { return { code: r[0], name: r[1], en: r[2] }; }), prices: m.prices || {}, pricePairs: Object.keys(m.prices || {}), features: ['addSupplier', 'addItem', 'fixRequest', 'freeEntry', 'lotAmount'], cancelHours: 0 };
       if (action === 'addItem') {
         var inm = String(body.name || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
         var same2 = m.items.filter(function (r) { return normName(r[1]) === normName(inm); })[0];
@@ -210,6 +210,7 @@
           var it = mi[e.itemCode] || [], vp = e.freeItem ? null : mp[e.supCode + '|' + e.itemCode];
           var price = vp != null ? vp : (it[3] === '' || it[3] == null ? null : Number(it[3])), kind = vp != null ? '取引先別' : (price == null ? '未設定' : 'マスター');
           if (e.freeItem) { price = e.freeItem.price === '' || e.freeItem.price == null ? null : Number(e.freeItem.price); kind = price == null ? '未設定' : '現場単価'; }
+          if (e.amount != null && !e.freeItem) { price = Number(e.amount); kind = '現場単価'; e.qty = 1; }
           log.push({ id: e.id, createdAt: nowIso(), date: e.date, supCode: e.supCode, itemCode: e.itemCode, qty: e.qty, price: price, priceKind: kind, status: '有効', user: e.user, note: (e.freeItem || e.freeSup ? '【手入力】 ' : '') + (e.note || ''), site: S.site,
             supName: e.freeSup ? e.freeSup.name : '', itemName: e.freeItem ? e.freeItem.name : '', unit: e.freeItem ? e.freeItem.unit : '' });
           return { id: e.id, ok: true, price: price, priceKind: kind };
@@ -297,6 +298,10 @@
   }
   function normName(s) { return String(s == null ? '' : s).normalize('NFKC').replace(/\s+/g, '').toLowerCase(); }
   function hasFeature(f) { return !!(S.masters && (S.masters.features || []).indexOf(f) >= 0); }
+  // 一式もの（2026-10-19〜）: 単位が「1式／一式／式」で単価の決まっていない商品は、数量ではなく金額を入れる。
+  // サーバーには 数量1＋amount で送り、入力ログは 数量1・単価=金額・単価区分「現場単価」になる（それまでは数量欄に金額が入り「未設定」だった）
+  function isLotUnit(u) { return /^[1一]?式$/.test(String(u == null ? '' : u).normalize('NFKC').trim()); }
+  function lotMode() { return !!(S.item && !S.item.free && hasFeature('lotAmount') && isLotUnit(S.item.unit) && !priceFor(S.item)); }
   function displayName(o) { return S.lang === 'en' && o.en ? o.en : o.name; }
   function subName(o) { return S.lang === 'en' && o.en ? o.name : ''; }
   // 単価の決定（シート側と同じ順）: 選択中の取引先×この商品の取引先別単価 → 商品マスタの単価 → なし
@@ -314,7 +319,7 @@
     return !!(item.priced || (S.sup && pairs.indexOf(S.sup.code + '|' + item.code) >= 0));
   }
   function fmtYen(n) { var v = Math.round(Number(n)); return '¥' + (isFinite(v) ? v.toLocaleString('ja-JP') : '?'); }
-  function priceTag(o) { var p = priceFor(o); return p ? ' ' + fmtYen(p.price) : (isPriced(o) ? '' : ' ・?'); }
+  function priceTag(o) { var p = priceFor(o); return p ? ' ' + fmtYen(p.price) : (isPriced(o) || (!o.free && hasFeature('lotAmount') && isLotUnit(o.unit)) ? '' : ' ・?'); }
   function updateAmount() {
     var p = priceFor(S.item), line = $('priceLine');
     if (!S.item || !p) { line.classList.add('hidden'); return; }
@@ -481,9 +486,11 @@
         sel.classList.remove('hidden'); pick.classList.add('hidden'); chg.classList.remove('hidden');
       } else { sel.classList.add('hidden'); pick.classList.remove('hidden'); chg.classList.add('hidden'); }
     });
-    $('unitLabel').textContent = S.item ? unitLabel(S.item.unit) : '';
-    $('unpricedHint').classList.toggle('hidden', !(S.item && !isPriced(S.item)));
-    $('unpricedHint').textContent = t(S.item && S.item.free ? 'freeUnpricedHint' : 'unpricedHint');
+    var lot = lotMode(), qt = $('qtyTitle');
+    qt.setAttribute('data-i18n', lot ? 'lotAmount' : 'qty'); qt.textContent = t(lot ? 'lotAmount' : 'qty');
+    $('unitLabel').textContent = lot ? unitLabel('円') : S.item ? unitLabel(S.item.unit) : '';
+    $('unpricedHint').classList.toggle('hidden', !(S.item && (lot || !isPriced(S.item))));
+    $('unpricedHint').textContent = t(lot ? 'lotHint' : S.item && S.item.free ? 'freeUnpricedHint' : 'unpricedHint');
     updateSaveBtn();
   }
   function change(kind) { if (kind === 'sup') S.sup = null; else S.item = null; showPickerForm(kind, false); renderSelected(); $(kind + 'Search').value = ''; renderPicker(kind); if (kind === 'sup') renderPicker('item'); setTimeout(function () { $(kind + 'Search').focus(); }, 50); }
@@ -494,22 +501,24 @@
   function todayKey() { return 'gtp_today_' + S.site; }
   function saveToday() { LS.set(todayKey(), S.today); }
   function save() {
-    var qty = qtyValue();
+    var qty = qtyValue(), lot = lotMode();
     if (!S.sup || !S.item) { $('saveError').textContent = t('selectFirst'); return; }
-    if (qty === null) { $('saveError').textContent = t('qtyInvalid'); return; }
+    if (qty === null) { $('saveError').textContent = t(lot ? 'lotInvalid' : 'qtyInvalid'); return; }
     $('saveError').textContent = '';
-    var p = priceFor(S.item);
+    var amount = lot ? qty : null; if (lot) qty = 1;   // 一式: 入れた数字は金額。数量は1
+    var p = lot ? { price: amount } : priceFor(S.item);
     var e = { id: uid('E'), createdAt: nowIso(), date: $('dateInput').value, supCode: S.sup.code, supName: S.sup.name, supEn: S.sup.en || '',
-      itemCode: S.item.code, itemName: S.item.name, itemEn: S.item.en || '', unit: S.item.unit, priced: isPriced(S.item), price: p ? p.price : null, qty: qty,
+      itemCode: S.item.code, itemName: S.item.name, itemEn: S.item.en || '', unit: S.item.unit, priced: lot || isPriced(S.item), price: p ? p.price : null, qty: qty,
       note: $('noteInput').value.trim(), user: S.user, status: 'wait', error: '' };
     S.today.unshift(e); saveToday();
     var qe = { id: e.id, site: S.site, date: e.date, supCode: e.supCode, itemCode: e.itemCode, qty: e.qty, note: e.note, user: e.user };
+    if (lot) qe.amount = amount;
     if (S.sup.free) qe.freeSup = { name: S.sup.name };
     if (S.item.free) qe.freeItem = { name: S.item.name, unit: S.item.unit, price: S.item.price == null ? '' : S.item.price };
     S.queue.push(qe); LS.set('gtp_queue', S.queue);
     if (!S.sup.free) bumpFreq('sup', e.supCode);
     if (!S.item.free && !S.sup.free) bumpFreq('item', e.itemCode);
-    toast(t('saved') + '：' + displayName(S.item) + ' ' + fmtQty(qty) + unitLabel(S.item.unit) + (p ? ' = ' + fmtYen(qty * p.price) : ''), 'ok');
+    toast(t('saved') + '：' + displayName(S.item) + ' ' + (lot ? fmtYen(amount) : fmtQty(qty) + unitLabel(S.item.unit) + (p ? ' = ' + fmtYen(qty * p.price) : '')), 'ok');
     S.item = null; $('qtyInput').value = ''; $('noteInput').value = ''; $('itemSearch').value = '';
     renderSelected(); renderPicker('item'); renderToday();
     $('itemCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -522,7 +531,7 @@
     if (S.busy || !siteQueue().length || !apiReady()) return Promise.resolve();
     S.busy = true; setNet(null);
     var before = siteQueue().length;
-    var batch = siteQueue().slice(0, 50).map(function (q) { var b = { id: q.id, date: q.date, supCode: q.supCode, itemCode: q.itemCode, qty: q.qty, note: q.note, user: q.user }; if (q.freeSup) b.freeSup = q.freeSup; if (q.freeItem) b.freeItem = q.freeItem; return b; });
+    var batch = siteQueue().slice(0, 50).map(function (q) { var b = { id: q.id, date: q.date, supCode: q.supCode, itemCode: q.itemCode, qty: q.qty, note: q.note, user: q.user }; if (q.freeSup) b.freeSup = q.freeSup; if (q.freeItem) b.freeItem = q.freeItem; if (q.amount != null) b.amount = q.amount; return b; });
     return api('add', { entries: batch, meta: { user: S.user, device: S.device } }).then(function (j) {
       (j.results || []).forEach(function (r) {
         var e = S.today.filter(function (x) { return x.id === r.id; })[0];
@@ -597,7 +606,7 @@
       qbox.classList.toggle('hidden', k !== 'qty'); noteL.textContent = t(k === 'other' ? 'reqNoteOther' : 'reqNote');
       if (focus) setTimeout(function () { if (k === 'qty') { qinp.focus(); qinp.select(); } else if (k === 'other') note.focus(); }, 30);
     };
-    REQ_KINDS.forEach(function (k) {
+    (isLotUnit(e.unit) ? ['cancel', 'other'] : REQ_KINDS).forEach(function (k) {
       var b = document.createElement('button'); b.type = 'button'; b.textContent = t('kind_' + k); b.setAttribute('data-kind', k); b.disabled = f.sending;
       b.onclick = function () { f.error = ''; err.textContent = ''; pick(k, true); };
       kinds.appendChild(b);
